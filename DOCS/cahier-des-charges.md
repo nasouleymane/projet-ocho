@@ -65,8 +65,10 @@ pas encore pensé pour d'autres utilisateurs ni pour la monétisation.
 À partir d'une **photo** du plat ou d'une **saisie manuelle**, une IA identifie
 les aliments et estime calories + macros.
 
-- **Modèle** : Claude Opus 4.8 (`claude-opus-4-8`) — vision, raisonnement
-  approfondi (adaptive thinking), tool use, sorties structurées JSON.
+- **Modèle** : Google Gemini (API Gemini, clé gratuite sans carte bancaire pour
+  démarrer) — vision, sorties structurées JSON. Choisi le 2026-08-10 à la
+  place de Claude Opus 4.8 (choix initial) pour éviter la config de paiement
+  requise par l'API Anthropic sur un prototype perso.
 - **Ancrage nutritionnel** (le levier anti-erreur) : l'IA ne devine pas les
   valeurs — elle interroge **Open Food Facts** (produits emballés) et **CIQUAL**
   (table ANSES, aliments et plats FR génériques), puis calcule
@@ -76,9 +78,9 @@ les aliments et estime calories + macros.
   (ex. « ≈620 kcal · 540–700 »).
 - **Validation utilisateur** : l'IA propose le détail, l'utilisateur ajuste les
   portions avant enregistrement (humain dans la boucle = confiance + correction).
-- **Sécurité** : la clé API Anthropic reste **côté serveur**, jamais dans l'app
+- **Sécurité** : la clé API Gemini reste **côté serveur**, jamais dans l'app
   (extractible du bundle sinon). Appel via une **Supabase Edge Function** (Deno)
-  qui relaie photo/texte → Claude → bases nutrition → JSON structuré vers l'app.
+  qui relaie photo/texte → Gemini → bases nutrition → JSON structuré vers l'app.
 - **Limite assumée** : le poids de la portion estimé depuis une photo 2D est
   intrinsèquement approximatif (aucun système ne le donne au gramme près sans
   balance). Objectif = estimation **fiable et traçable**, pas « zéro erreur »,
