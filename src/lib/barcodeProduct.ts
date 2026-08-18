@@ -31,9 +31,24 @@ function parseServingGrams(servingSize: unknown): number | null {
  * n'est pas dans la base Open Food Facts (jamais une valeur inventée).
  */
 export async function lookupProductByBarcode(barcode: string): Promise<BarcodeProduct | null> {
-  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`, {
-    headers: { 'User-Agent': 'Ocho - app de suivi nutritionnel personnel' },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+
+  let res: Response;
+  try {
+    res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`, {
+      headers: { 'User-Agent': 'Ocho - app de suivi nutritionnel personnel' },
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('La recherche a pris trop de temps, réessaie.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
   if (!res.ok) throw new Error(`Open Food Facts a répondu ${res.status}`);
 
   const data = await res.json();
