@@ -25,7 +25,11 @@ type EstimateMealInput = { image: string } | { description: string };
  * un résultat vide silencieux.
  */
 export async function estimateMeal(input: EstimateMealInput): Promise<FoodEstimate[]> {
-  const { data, error } = await supabase.functions.invoke('estimate-meal', { body: input });
+  // 70s : marge au-dessus du pire cas côté serveur (timeout Gemini 55s +
+  // quelques secondes de recherche OFF/CIQUAL) — évite qu'un aléa réseau
+  // côté client (connexion qui ne se termine ni n'échoue jamais) laisse le
+  // spinner tourner indéfiniment, même quand la fonction elle-même est saine.
+  const { data, error } = await supabase.functions.invoke('estimate-meal', { body: input, timeout: 70_000 });
 
   if (error) {
     let detail = error.message;
