@@ -110,7 +110,7 @@ central "+" mis en avant.
 | Couche | Choix |
 |---|---|
 | Frontend mobile | React Native + Expo (SDK 54 — compatible Expo Go) |
-| IA — estimation repas | Claude Opus 4.8 (`claude-opus-4-8`), appelé **côté serveur** |
+| IA — estimation repas | Google Gemini (`gemini-3.6-flash`), appelé **côté serveur** |
 | Bases nutrition (V1) | Open Food Facts (produits emballés) + CIQUAL / ANSES (aliments FR) |
 | Backend | Supabase Edge Functions (Deno) ; Node.js + Express seulement si une logique custom le justifie |
 | Base de données | PostgreSQL via Supabase |
