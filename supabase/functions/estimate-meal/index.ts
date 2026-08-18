@@ -17,6 +17,23 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+/**
+ * `fetch` sans timeout peut laisser toute la requête pendre plusieurs
+ * dizaines de secondes si Gemini ou Open Food Facts est lent (observé en
+ * test : >30s sur un seul aliment) — mauvaise UX sur un scan censé être
+ * rapide. `AbortController` coupe après `timeoutMs` plutôt que de compter
+ * sur le timeout de plateforme (beaucoup plus long, message moins clair).
+ */
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 type FoodGuess = {
   name: string;
   quantity_g: number;
@@ -107,20 +124,29 @@ async function callGemini(imageBase64: string | null, description: string | null
     parts.push({ inline_data: { mime_type: 'image/jpeg', data: imageBase64 } });
   }
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: RESPONSE_SCHEMA,
-        },
-      }),
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: RESPONSE_SCHEMA,
+          },
+        }),
+      },
+      30_000
+    );
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error("L'analyse a pris trop de temps, réessaie.");
     }
-  );
+    throw err;
+  }
 
   if (!res.ok) {
     throw new Error(`Gemini API error ${res.status}: ${await res.text()}`);
@@ -144,7 +170,11 @@ async function lookupOpenFoodFacts(query: string): Promise<{
   const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(
     query
   )}&search_simple=1&action=process&json=1&page_size=1`;
-  const res = await fetch(url, { headers: { 'User-Agent': 'Ocho - app de suivi nutritionnel personnel' } });
+  const res = await fetchWithTimeout(
+    url,
+    { headers: { 'User-Agent': 'Ocho - app de suivi nutritionnel personnel' } },
+    8_000
+  );
   if (!res.ok) return null;
 
   const data = await res.json();
