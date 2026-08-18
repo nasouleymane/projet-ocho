@@ -219,6 +219,14 @@ export default function AddFoodScreen() {
                 <Ionicons name="images-outline" size={20} color={colors.accent} />
                 <Text style={styles.scanBtnLabel}>Galerie</Text>
               </Pressable>
+              <Pressable
+                onPress={() => router.push('/scan-barcode')}
+                accessibilityRole="button"
+                style={styles.scanBtn}
+              >
+                <Ionicons name="barcode-outline" size={20} color={colors.accent} />
+                <Text style={styles.scanBtnLabel}>Scanner</Text>
+              </Pressable>
             </View>
           )}
 

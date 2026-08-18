@@ -54,6 +54,7 @@ function RootNavigation() {
         <Stack.Screen name="add-food" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add-workout" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add-weight" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="scan-barcode" options={{ presentation: 'modal' }} />
       </Stack>
     </>
   );
