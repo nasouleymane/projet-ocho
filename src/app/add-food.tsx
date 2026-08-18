@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,12 +80,12 @@ export default function AddFoodScreen() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert(
-        'Permission refusée',
+      setScanErrorMsg(
         source === 'camera'
           ? "Autorise l'accès à l'appareil photo dans les réglages pour scanner un repas."
           : "Autorise l'accès aux photos dans les réglages pour scanner un repas."
       );
+      setScanState('error');
       return;
     }
 
