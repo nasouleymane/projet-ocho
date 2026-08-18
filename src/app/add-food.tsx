@@ -6,19 +6,26 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Alert,
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 
 import { Card } from '@/components/Card';
 import { NumberField } from '@/components/NumberField';
 import { TextField } from '@/components/TextField';
 import { CtaButton } from '@/components/CtaButton';
+import { FoodEstimateCard } from '@/components/FoodEstimateCard';
 import { useJournal, FavoriteFood } from '@/store/journal';
+import { estimateMeal, FoodEstimate } from '@/lib/mealEstimate';
 import { defaultMealTypeNow, MealType } from '@/lib/date';
 import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
+
+type ScanState = 'idle' | 'loading' | 'results' | 'error';
 
 const MEALS: { type: MealType; label: string }[] = [
   { type: 'petit-dejeuner', label: 'Petit-déj.' },
@@ -48,9 +55,80 @@ export default function AddFoodScreen() {
   const [fatG, setFatG] = useState(0);
   const [saveAsFavorite, setSaveAsFavorite] = useState(false);
 
+  const [scanState, setScanState] = useState<ScanState>('idle');
+  const [scanResults, setScanResults] = useState<FoodEstimate[]>([]);
+  const [scanErrorMsg, setScanErrorMsg] = useState('');
+
   const canSave = name.trim().length > 0 && kcal > 0;
 
   const close = () => router.back();
+
+  const runEstimate = async (base64: string) => {
+    setScanState('loading');
+    try {
+      const foods = await estimateMeal({ image: base64 });
+      setScanResults(foods);
+      setScanState('results');
+    } catch (err) {
+      setScanErrorMsg(err instanceof Error ? err.message : 'Erreur inconnue');
+      setScanState('error');
+    }
+  };
+
+  const pickImage = async (source: 'camera' | 'library') => {
+    const permission =
+      source === 'camera'
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        'Permission refusée',
+        source === 'camera'
+          ? "Autorise l'accès à l'appareil photo dans les réglages pour scanner un repas."
+          : "Autorise l'accès aux photos dans les réglages pour scanner un repas."
+      );
+      return;
+    }
+
+    const options: ImagePicker.ImagePickerOptions = {
+      mediaTypes: ['images'],
+      base64: true,
+      quality: 0.5,
+      allowsEditing: true,
+    };
+    const result =
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
+
+    const base64 = result.assets?.[0]?.base64;
+    if (!result.canceled && base64) {
+      runEstimate(base64);
+    }
+  };
+
+  const updateScanResult = (index: number, patch: Partial<FoodEstimate>) => {
+    setScanResults((list) => list.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  };
+
+  const removeScanResult = (index: number) => {
+    setScanResults((list) => list.filter((_, i) => i !== index));
+  };
+
+  const addAllScanResults = () => {
+    scanResults.forEach((r) => {
+      addEntry({
+        mealType: meal,
+        name: r.name,
+        quantityLabel: r.quantity_label,
+        kcal: r.kcal,
+        proteinG: r.protein_g,
+        carbsG: r.carbs_g,
+        fatG: r.fat_g,
+      });
+    });
+    close();
+  };
 
   const addFromFavorite = (fav: FavoriteFood) => {
     addEntry({
@@ -118,62 +196,133 @@ export default function AddFoodScreen() {
             })}
           </View>
 
-          {favorites.length > 0 && (
-            <View style={styles.favSection}>
-              <Text style={styles.sectionLabel}>Favoris</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.favRow}
+          {scanState === 'idle' && (
+            <View style={styles.scanRow}>
+              <Pressable
+                onPress={() => pickImage('camera')}
+                accessibilityRole="button"
+                style={styles.scanBtn}
               >
-                {favorites.map((f) => (
-                  <Pressable
-                    key={f.id}
-                    onPress={() => addFromFavorite(f)}
-                    accessibilityRole="button"
-                    style={styles.favChip}
-                  >
-                    <Text style={styles.favName} numberOfLines={1}>
-                      {f.name}
-                    </Text>
-                    <Text style={styles.favKcal}>{f.kcal} kcal</Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
+                <Ionicons name="camera-outline" size={20} color={colors.accent} />
+                <Text style={styles.scanBtnLabel}>Photo</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => pickImage('library')}
+                accessibilityRole="button"
+                style={styles.scanBtn}
+              >
+                <Ionicons name="images-outline" size={20} color={colors.accent} />
+                <Text style={styles.scanBtnLabel}>Galerie</Text>
+              </Pressable>
             </View>
           )}
 
-          <View style={styles.textFields}>
-            <TextField placeholder="Nom de l'aliment" value={name} onChangeText={setName} />
-            <TextField placeholder="Quantité (ex. 150 g)" value={quantity} onChangeText={setQuantity} />
-          </View>
-
-          <Card style={styles.formCard}>
-            <NumberField label="Calories" unit="kcal" value={kcal} min={0} max={5000} step={10} onChange={setKcal} />
-            <View style={styles.divider} />
-            <NumberField label="Protéines" unit="g" value={proteinG} min={0} max={300} step={1} onChange={setProteinG} />
-            <View style={styles.divider} />
-            <NumberField label="Glucides" unit="g" value={carbsG} min={0} max={500} step={1} onChange={setCarbsG} />
-            <View style={styles.divider} />
-            <NumberField label="Lipides" unit="g" value={fatG} min={0} max={300} step={1} onChange={setFatG} />
-          </Card>
-
-          <Pressable
-            onPress={() => setSaveAsFavorite((v) => !v)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: saveAsFavorite }}
-            style={styles.favToggle}
-          >
-            <View style={[styles.checkbox, saveAsFavorite && styles.checkboxChecked]}>
-              {saveAsFavorite && <Ionicons name="checkmark" size={14} color={colors.background} />}
+          {scanState === 'loading' && (
+            <View style={styles.scanStatus}>
+              <ActivityIndicator color={colors.accent} size="large" />
+              <Text style={styles.scanStatusLabel}>Analyse de la photo…</Text>
             </View>
-            <Text style={styles.favToggleLabel}>Ajouter aux favoris</Text>
-          </Pressable>
+          )}
+
+          {scanState === 'error' && (
+            <View style={styles.scanStatus}>
+              <Ionicons name="alert-circle-outline" size={32} color={colors.textSecondary} />
+              <Text style={styles.scanStatusLabel}>{scanErrorMsg}</Text>
+              <Pressable onPress={() => setScanState('idle')} accessibilityRole="button">
+                <Text style={styles.scanRetryLabel}>Retour à la saisie manuelle</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {scanState === 'results' && (
+            <View style={styles.resultsSection}>
+              {scanResults.map((r, i) => (
+                <FoodEstimateCard
+                  key={i}
+                  estimate={r}
+                  onChange={(patch) => updateScanResult(i, patch)}
+                  onRemove={() => removeScanResult(i)}
+                />
+              ))}
+              {scanResults.length === 0 && (
+                <Text style={styles.scanStatusLabel}>Aucun aliment détecté sur cette photo.</Text>
+              )}
+              <Pressable onPress={() => setScanState('idle')} accessibilityRole="button">
+                <Text style={styles.scanRetryLabel}>Retour à la saisie manuelle</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {scanState === 'idle' && (
+            <>
+              {favorites.length > 0 && (
+                <View style={styles.favSection}>
+                  <Text style={styles.sectionLabel}>Favoris</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.favRow}
+                  >
+                    {favorites.map((f) => (
+                      <Pressable
+                        key={f.id}
+                        onPress={() => addFromFavorite(f)}
+                        accessibilityRole="button"
+                        style={styles.favChip}
+                      >
+                        <Text style={styles.favName} numberOfLines={1}>
+                          {f.name}
+                        </Text>
+                        <Text style={styles.favKcal}>{f.kcal} kcal</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
+              <View style={styles.textFields}>
+                <TextField placeholder="Nom de l'aliment" value={name} onChangeText={setName} />
+                <TextField placeholder="Quantité (ex. 150 g)" value={quantity} onChangeText={setQuantity} />
+              </View>
+
+              <Card style={styles.formCard}>
+                <NumberField label="Calories" unit="kcal" value={kcal} min={0} max={5000} step={10} onChange={setKcal} />
+                <View style={styles.divider} />
+                <NumberField label="Protéines" unit="g" value={proteinG} min={0} max={300} step={1} onChange={setProteinG} />
+                <View style={styles.divider} />
+                <NumberField label="Glucides" unit="g" value={carbsG} min={0} max={500} step={1} onChange={setCarbsG} />
+                <View style={styles.divider} />
+                <NumberField label="Lipides" unit="g" value={fatG} min={0} max={300} step={1} onChange={setFatG} />
+              </Card>
+
+              <Pressable
+                onPress={() => setSaveAsFavorite((v) => !v)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: saveAsFavorite }}
+                style={styles.favToggle}
+              >
+                <View style={[styles.checkbox, saveAsFavorite && styles.checkboxChecked]}>
+                  {saveAsFavorite && <Ionicons name="checkmark" size={14} color={colors.background} />}
+                </View>
+                <Text style={styles.favToggleLabel}>Ajouter aux favoris</Text>
+              </Pressable>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-        <CtaButton label="Ajouter" onPress={save} disabled={!canSave} />
+        <CtaButton
+          label={scanState === 'results' ? `Ajouter au journal (${scanResults.length})` : 'Ajouter'}
+          onPress={scanState === 'results' ? addAllScanResults : save}
+          disabled={
+            scanState === 'loading' || scanState === 'error'
+              ? true
+              : scanState === 'results'
+                ? scanResults.length === 0
+                : !canSave
+          }
+        />
       </View>
     </View>
   );
@@ -235,6 +384,47 @@ const getStyles = (colors: ColorPalette, cardShadow: object) =>
   },
   mealPillLabelActive: {
     color: colors.background,
+  },
+  scanRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  scanBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    height: 48,
+    borderRadius: radius.button,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.borderStrong,
+    paddingHorizontal: spacing.xs,
+  },
+  scanBtnLabel: {
+    ...typography.body,
+    fontWeight: '500',
+    color: colors.accent,
+  },
+  scanStatus: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xxxl,
+  },
+  scanStatusLabel: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  scanRetryLabel: {
+    ...typography.body,
+    fontWeight: '500',
+    color: colors.accent,
+    textAlign: 'center',
+  },
+  resultsSection: {
+    gap: spacing.md,
   },
   favSection: {
     gap: spacing.sm,
