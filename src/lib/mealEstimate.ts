@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 /** Ocho — appel à l'Edge Function d'estimation IA des repas (cahier §3.7). */
@@ -27,7 +28,16 @@ export async function estimateMeal(input: EstimateMealInput): Promise<FoodEstima
   const { data, error } = await supabase.functions.invoke('estimate-meal', { body: input });
 
   if (error) {
-    throw new Error(`Estimation indisponible : ${error.message}`);
+    let detail = error.message;
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = await error.context.json();
+        if (body?.error) detail = body.error;
+      } catch {
+        // corps non-JSON ou illisible → garder le message générique du SDK
+      }
+    }
+    throw new Error(`Estimation indisponible : ${detail}`);
   }
   if (!data?.foods) {
     throw new Error('Réponse inattendue du serveur d\'estimation.');

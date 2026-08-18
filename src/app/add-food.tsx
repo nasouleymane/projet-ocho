@@ -57,12 +57,14 @@ export default function AddFoodScreen() {
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [scanResults, setScanResults] = useState<FoodEstimate[]>([]);
   const [scanErrorMsg, setScanErrorMsg] = useState('');
+  const [lastImageBase64, setLastImageBase64] = useState<string | null>(null);
 
   const canSave = name.trim().length > 0 && kcal > 0;
 
   const close = () => router.back();
 
   const runEstimate = async (base64: string) => {
+    setLastImageBase64(base64);
     setScanState('loading');
     try {
       const foods = await estimateMeal({ image: base64 });
@@ -72,6 +74,10 @@ export default function AddFoodScreen() {
       setScanErrorMsg(err instanceof Error ? err.message : 'Erreur inconnue');
       setScanState('error');
     }
+  };
+
+  const retryEstimate = () => {
+    if (lastImageBase64) runEstimate(lastImageBase64);
   };
 
   const pickImage = async (source: 'camera' | 'library') => {
@@ -227,6 +233,11 @@ export default function AddFoodScreen() {
             <View style={styles.scanStatus}>
               <Ionicons name="alert-circle-outline" size={32} color={colors.textSecondary} />
               <Text style={styles.scanStatusLabel}>{scanErrorMsg}</Text>
+              {lastImageBase64 && (
+                <Pressable onPress={retryEstimate} accessibilityRole="button">
+                  <Text style={styles.scanRetryLabel}>Réessayer</Text>
+                </Pressable>
+              )}
               <Pressable onPress={() => setScanState('idle')} accessibilityRole="button">
                 <Text style={styles.scanRetryLabel}>Retour à la saisie manuelle</Text>
               </Pressable>
