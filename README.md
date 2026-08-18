@@ -121,11 +121,18 @@ Tous les jetons visuels (couleurs, rayons, typographie) sont dérivés de
   l'onboarding avec le poids saisi, pour que le delta soit exploitable dès le
   départ. `NumberField` supporte désormais un prop `decimals` (défaut 0) pour
   ce champ à dixième de kg — tous les usages existants (entiers) sont inchangés.
-- **Pipeline IA (photo → estimation)** : prévu au cahier §3.7, pas encore
-  implémenté — nécessite un projet Supabase (Edge Function) + une clé API
-  Anthropic, tous deux à fournir par l'utilisateur (jamais créés/saisis par
-  l'agent). Le modèle de données du Journal est conçu pour l'accueillir sans
-  migration lourde le moment venu.
+- **Pipeline IA (photo → estimation)** — cahier §3.7, **déployé et
+  fonctionnel**. `supabase/functions/estimate-meal` (Edge Function Deno) :
+  Gemini identifie les aliments et estime la portion depuis une photo ou une
+  description ; Open Food Facts fournit les vraies valeurs nutritionnelles
+  pour les produits de marque reconnaissables (ancrage réel, jamais inventé) ;
+  repli sur l'estimation de l'IA pour le reste, avec confiance réduite et
+  fourchette plus large. Côté app : bouton scan dans `add-food.tsx`
+  (`expo-image-picker`), écran de résultats éditables
+  (`FoodEstimateCard`) avant ajout au journal. **CIQUAL pas encore intégré**
+  (aliments génériques FR) — c'est un fichier de données ANSES à importer
+  dans une table, pas une API en temps réel comme Open Food Facts ; en
+  attendant, ces aliments passent par l'estimation IA seule.
 - **Progression** : la timeline ne résume que les semaines **pleinement
   écoulées** depuis la 1ère pesée (le Dashboard couvre déjà « aujourd'hui » /
   « cette semaine » en cours). La 1ère pesée est LA référence « Jour 1» —
@@ -156,9 +163,9 @@ Tous les jetons visuels (couleurs, rayons, typographie) sont dérivés de
 
 ## Roadmap (cf. cahier des charges)
 
-Onboarding ✅ → Dashboard ✅ → Journal ✅ → Entraînements ✅ → Progression ✅ → **Profil ✅**.
+Onboarding ✅ → Dashboard ✅ → Journal ✅ → Entraînements ✅ → Progression ✅ → Profil ✅ → **Estimation IA ✅**.
 
-V1 MVP complet. Reste au cahier : **§3.7 Estimation IA des repas** (scan photo →
-calories/macros via Supabase Edge Function + Open Food Facts/CIQUAL) — non
-démarré, nécessite un projet Supabase et une clé API Anthropic à créer par
-l'utilisateur lui-même (jamais par l'agent).
+V1 MVP complet, y compris le pilier IA (§3.7 — Gemini + Open Food Facts, cf.
+« Notes d'implémentation » ci-dessus). Amélioration restante : ancrage CIQUAL
+pour les aliments génériques français (actuellement estimation IA seule pour
+ces cas, Open Food Facts déjà fonctionnel pour les produits de marque).
