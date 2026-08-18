@@ -177,5 +177,18 @@ Onboarding ✅ → Dashboard ✅ → Journal ✅ → Entraînements ✅ → Prog
 
 V1 MVP complet, y compris le pilier IA (§3.7) avec ancrage nutritionnel
 complet — Open Food Facts (produits de marque) + CIQUAL (aliments FR
-génériques) — cf. « Notes d'implémentation » ci-dessus. Rien de bloquant
-restant au cahier des charges.
+génériques) — cf. « Notes d'implémentation » ci-dessus.
+
+**V2** (cahier §4) — ordre décidé : finir le reste de la V2, puis attaquer
+une liste d'améliorations d'interface.
+- Scanner code-barres dédié ✅ (`src/app/scan-barcode.tsx`, Open Food Facts
+  en lecture directe depuis l'app — lookup exact, pas besoin de l'Edge
+  Function puisqu'il n'y a pas de secret à protéger contrairement à Gemini)
+- Historique de plats fréquents — pas commencé
+- Notifications — pas commencé
+- Photos avant/après — pas commencé
+- Recettes personnalisées, log vocal — repoussés sans date
+
+Authentification multi-appareil (Supabase Auth, prévue au cahier §6) :
+objectif confirmé par l'utilisateur, mais explicitement pour la fin — l'app
+reste 100 % locale (AsyncStorage) pour l'instant.
