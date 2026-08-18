@@ -27,10 +27,15 @@ const CORS_HEADERS = {
 
 /**
  * `fetch` sans timeout peut laisser toute la requête pendre plusieurs
- * dizaines de secondes si Gemini ou Open Food Facts est lent (observé en
- * test : >30s sur un seul aliment) — mauvaise UX sur un scan censé être
- * rapide. `AbortController` coupe après `timeoutMs` plutôt que de compter
- * sur le timeout de plateforme (beaucoup plus long, message moins clair).
+ * dizaines de secondes si Gemini ou Open Food Facts est lent — mauvaise UX
+ * sur un scan censé être rapide. `AbortController` coupe après `timeoutMs`
+ * plutôt que de compter sur le timeout de plateforme (beaucoup plus long,
+ * message moins clair). Le timeout Gemini (55s) est volontairement généreux :
+ * `gemini-3.6-flash` fait du "thinking" (raisonnement étendu) sur les cas
+ * ambigus — un plat mélangé/composé a mis ~20-30s à traiter sur un simple
+ * appel texte, un premier timeout à 30s coupait la requête avant qu'elle
+ * n'aboutisse (`AbortError` déguisé en échec alors que Gemini aurait fini
+ * par répondre correctement).
  */
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
@@ -118,6 +123,16 @@ photo de repas (ou dans cette description), et pour chacun :
 - donne une estimation de calories/protéines/glucides/lipides pour la portion, qui ne servira
   que de repli si le produit n'est pas trouvé dans la base de données.
 
+Pour un plat composé ou mélangé fait maison (ragoût, curry, sauté, gratin,
+plat en sauce...), essaie D'ABORD de le nommer comme un plat complet
+reconnaissable (ex. « Bœuf bourguignon », « Couscous », « Ratatouille »,
+« Curry de poulet ») plutôt que de décomposer chaque ingrédient séparément —
+ces noms de plats complets ont de bien meilleures chances d'être retrouvés
+précisément dans les bases de données nutritionnelles. Ne décompose en
+éléments séparés que si le plat n'a pas de nom usuel reconnaissable, ou si
+les éléments sont visiblement distincts dans l'assiette (ex. viande et
+accompagnement côte à côte, non mélangés).
+
 Ne regroupe pas plusieurs aliments différents en un seul. Sois précis sur les
 portions : une petite assiette de riz cuit ≈ 150 g, une portion de viande ≈
 120-180 g, etc.`;
@@ -147,7 +162,7 @@ async function callGemini(imageBase64: string | null, description: string | null
           },
         }),
       },
-      30_000
+      55_000
     );
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
