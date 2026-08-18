@@ -122,17 +122,27 @@ Tous les jetons visuels (couleurs, rayons, typographie) sont dérivés de
   départ. `NumberField` supporte désormais un prop `decimals` (défaut 0) pour
   ce champ à dixième de kg — tous les usages existants (entiers) sont inchangés.
 - **Pipeline IA (photo → estimation)** — cahier §3.7, **déployé et
-  fonctionnel**. `supabase/functions/estimate-meal` (Edge Function Deno) :
-  Gemini identifie les aliments et estime la portion depuis une photo ou une
-  description ; Open Food Facts fournit les vraies valeurs nutritionnelles
-  pour les produits de marque reconnaissables (ancrage réel, jamais inventé) ;
-  repli sur l'estimation de l'IA pour le reste, avec confiance réduite et
-  fourchette plus large. Côté app : bouton scan dans `add-food.tsx`
-  (`expo-image-picker`), écran de résultats éditables
-  (`FoodEstimateCard`) avant ajout au journal. **CIQUAL pas encore intégré**
-  (aliments génériques FR) — c'est un fichier de données ANSES à importer
-  dans une table, pas une API en temps réel comme Open Food Facts ; en
-  attendant, ces aliments passent par l'estimation IA seule.
+  fonctionnel, ancrage complet (Open Food Facts + CIQUAL)**.
+  `supabase/functions/estimate-meal` (Edge Function Deno) : Gemini identifie
+  les aliments et estime la portion depuis une photo ou une description ;
+  résolution en cascade sur 3 paliers, jamais de valeur inventée quand une
+  vraie donnée existe :
+  1. **Open Food Facts** (API temps réel) pour les produits de marque identifiables.
+  2. **CIQUAL** (ANSES, `supabase/migrations/*_ciqual_foods.sql` — 3323
+     aliments génériques FR importés depuis la table officielle 2025) pour
+     le reste — recherche via `search_ciqual_food()` : full-text français
+     (mots-clés stricts, stemming) en priorité, repli trigram si aucun
+     mot-clé ne matche. Le trigram seul a été essayé en premier et écarté :
+     il classe par proximité de caractères, pas par sens (`"riz blanc cuit"`
+     matchait `"Riz blanc, cru"` à 350 kcal/100g au lieu de `"Riz blanc,
+     cuit"` à 155 kcal/100g, pourtant présent en base).
+  3. **Estimation de l'IA** en dernier repli, confiance réduite et
+     fourchette plus large — jamais présentée comme aussi fiable qu'une
+     donnée de base réelle.
+
+  Côté app : bouton scan dans `add-food.tsx` (`expo-image-picker`), écran de
+  résultats éditables (`FoodEstimateCard`, badge de source par palier) avant
+  ajout au journal.
 - **Progression** : la timeline ne résume que les semaines **pleinement
   écoulées** depuis la 1ère pesée (le Dashboard couvre déjà « aujourd'hui » /
   « cette semaine » en cours). La 1ère pesée est LA référence « Jour 1» —
@@ -165,7 +175,7 @@ Tous les jetons visuels (couleurs, rayons, typographie) sont dérivés de
 
 Onboarding ✅ → Dashboard ✅ → Journal ✅ → Entraînements ✅ → Progression ✅ → Profil ✅ → **Estimation IA ✅**.
 
-V1 MVP complet, y compris le pilier IA (§3.7 — Gemini + Open Food Facts, cf.
-« Notes d'implémentation » ci-dessus). Amélioration restante : ancrage CIQUAL
-pour les aliments génériques français (actuellement estimation IA seule pour
-ces cas, Open Food Facts déjà fonctionnel pour les produits de marque).
+V1 MVP complet, y compris le pilier IA (§3.7) avec ancrage nutritionnel
+complet — Open Food Facts (produits de marque) + CIQUAL (aliments FR
+génériques) — cf. « Notes d'implémentation » ci-dessus. Rien de bloquant
+restant au cahier des charges.
