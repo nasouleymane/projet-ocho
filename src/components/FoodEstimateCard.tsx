@@ -18,13 +18,21 @@ type Props = {
 /**
  * Un aliment détecté par l'estimation IA (cahier §3.7), éditable avant ajout
  * au journal — « l'IA propose le détail, l'utilisateur ajuste les portions ».
- * `source: 'open_food_facts'` = valeurs réelles d'une base de données (badge
- * mis en avant) ; `'estimation_ia'` = repli de l'IA, moins fiable (badge neutre).
+ * `source: 'open_food_facts' | 'ciqual'` = valeurs réelles d'une base de
+ * données (badge mis en avant) ; `'estimation_ia'` = repli de l'IA, moins
+ * fiable (badge neutre) — voir `supabase/functions/estimate-meal`.
  */
+const SOURCE_BADGE: Record<FoodEstimate['source'], { icon: keyof typeof Ionicons.glyphMap; label: string }> = {
+  open_food_facts: { icon: 'checkmark-circle-outline', label: 'Ancré Open Food Facts' },
+  ciqual: { icon: 'checkmark-circle-outline', label: 'Ancré CIQUAL (ANSES)' },
+  estimation_ia: { icon: 'sparkles-outline', label: 'Estimation IA' },
+};
+
 export function FoodEstimateCard({ estimate, onChange, onRemove }: Props) {
   const { colors } = useTheme();
   const styles = getStyles(colors);
-  const isGrounded = estimate.source === 'open_food_facts';
+  const isGrounded = estimate.source !== 'estimation_ia';
+  const badge = SOURCE_BADGE[estimate.source];
 
   return (
     <Card style={styles.card}>
@@ -43,11 +51,7 @@ export function FoodEstimateCard({ estimate, onChange, onRemove }: Props) {
       </View>
 
       <View style={styles.badgeRow}>
-        <StatChip
-          icon={isGrounded ? 'checkmark-circle-outline' : 'sparkles-outline'}
-          label={isGrounded ? 'Ancré Open Food Facts' : 'Estimation IA'}
-          highlighted={isGrounded}
-        />
+        <StatChip icon={badge.icon} label={badge.label} highlighted={isGrounded} />
         <Text style={styles.range}>
           ≈{estimate.range_kcal[0]}–{estimate.range_kcal[1]} kcal
         </Text>

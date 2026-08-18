@@ -12,7 +12,7 @@ export type FoodEstimate = {
   fat_g: number;
   confidence: 'high' | 'medium' | 'low';
   range_kcal: [number, number];
-  source: 'open_food_facts' | 'estimation_ia';
+  source: 'open_food_facts' | 'ciqual' | 'estimation_ia';
 };
 
 type EstimateMealInput = { image: string } | { description: string };

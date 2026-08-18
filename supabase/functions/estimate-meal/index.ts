@@ -1,15 +1,23 @@
 // Edge Function : estimation IA d'un repas à partir d'une photo ou d'une
 // description texte (cahier §3.7). Principe anti-hallucination : Gemini ne
 // sert qu'à IDENTIFIER les aliments et ESTIMER la portion — les valeurs
-// nutritionnelles viennent d'Open Food Facts quand le produit est un article
-// emballé identifiable (jamais inventées dans ce cas). Pour un aliment
-// générique/fait maison (pas encore ancré sur CIQUAL — prochaine étape),
-// on garde l'estimation de l'IA mais avec une confiance réduite et une
-// fourchette plus large, jamais présentée comme aussi fiable qu'une donnée
-// de base réelle.
+// nutritionnelles viennent d'une vraie base de données quand possible
+// (jamais inventées dans ce cas), par ordre de priorité :
+//   1. Open Food Facts — produit industriel emballé identifiable
+//   2. CIQUAL (ANSES) — aliment générique/fait maison FR (table importée
+//      dans `ciqual_foods`, recherchée via la fonction SQL `search_ciqual_food`)
+//   3. Repli sur l'estimation de l'IA — confiance réduite, fourchette plus
+//      large, jamais présentée comme aussi fiable qu'une donnée de base réelle.
+
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 const GEMINI_MODEL = 'gemini-3.6-flash';
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_ANON_KEY')!
+);
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -57,7 +65,7 @@ type FoodResult = {
   fat_g: number;
   confidence: Confidence;
   range_kcal: [number, number];
-  source: 'open_food_facts' | 'estimation_ia';
+  source: 'open_food_facts' | 'ciqual' | 'estimation_ia';
 };
 
 const RESPONSE_SCHEMA = {
@@ -192,17 +200,39 @@ async function lookupOpenFoodFacts(query: string): Promise<{
   };
 }
 
+/** Cherche un aliment générique dans CIQUAL (ANSES), retourne les valeurs pour 100g si trouvé. */
+async function lookupCiqual(query: string): Promise<{
+  name: string;
+  kcal_100g: number;
+  protein_100g: number;
+  carbs_100g: number;
+  fat_100g: number;
+} | null> {
+  const { data, error } = await supabase.rpc('search_ciqual_food', { query });
+  if (error || !data || data.length === 0) return null;
+
+  const match = data[0];
+  return {
+    name: match.name,
+    kcal_100g: match.kcal_100g,
+    protein_100g: match.protein_100g,
+    carbs_100g: match.carbs_100g,
+    fat_100g: match.fat_100g,
+  };
+}
+
 function withRange(kcal: number, confidence: Confidence): [number, number] {
   const margin = confidence === 'high' ? 0.08 : confidence === 'medium' ? 0.2 : 0.35;
   return [Math.round(kcal * (1 - margin)), Math.round(kcal * (1 + margin))];
 }
 
 async function resolveFood(guess: FoodGuess): Promise<FoodResult> {
+  const factor = guess.quantity_g / 100;
+
   if (guess.is_packaged_product && guess.product_name_guess) {
     try {
       const off = await lookupOpenFoodFacts(guess.product_name_guess);
       if (off) {
-        const factor = guess.quantity_g / 100;
         const kcal = Math.round(off.kcal_100g * factor);
         return {
           name: off.name,
@@ -218,8 +248,29 @@ async function resolveFood(guess: FoodGuess): Promise<FoodResult> {
         };
       }
     } catch {
-      // OFF indisponible → repli sur l'estimation IA ci-dessous.
+      // OFF indisponible → tente CIQUAL, puis repli sur l'estimation IA.
     }
+  }
+
+  try {
+    const ciqual = await lookupCiqual(guess.name);
+    if (ciqual) {
+      const kcal = Math.round(ciqual.kcal_100g * factor);
+      return {
+        name: ciqual.name,
+        quantity_g: guess.quantity_g,
+        quantity_label: `${guess.quantity_g} g`,
+        kcal,
+        protein_g: Math.round(ciqual.protein_100g * factor * 10) / 10,
+        carbs_g: Math.round(ciqual.carbs_100g * factor * 10) / 10,
+        fat_g: Math.round(ciqual.fat_100g * factor * 10) / 10,
+        confidence: 'high',
+        range_kcal: withRange(kcal, 'high'),
+        source: 'ciqual',
+      };
+    }
+  } catch {
+    // CIQUAL indisponible → repli sur l'estimation IA ci-dessous.
   }
 
   return {
