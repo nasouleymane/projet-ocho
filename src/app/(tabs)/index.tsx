@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
 import { ProgressRing } from '@/components/ProgressRing';
-import { MacroCircle } from '@/components/MacroCircle';
+import { MacroBar } from '@/components/MacroBar';
 import { StreakBadge } from '@/components/StreakBadge';
 import { QuickButton } from '@/components/QuickButton';
 import { WeekStat } from '@/components/WeekStat';
@@ -134,7 +134,7 @@ export default function DashboardScreen() {
 
         <View style={styles.macroRow}>
           {macros.map((m) => (
-            <MacroCircle
+            <MacroBar
               key={m.key}
               macro={m.key}
               label={m.label}
@@ -280,7 +280,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   macroRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    gap: spacing.xl,
   },
   vDivider: {
     width: 1,

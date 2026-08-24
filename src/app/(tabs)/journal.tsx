@@ -8,11 +8,11 @@ import { useJournal } from '@/store/journal';
 import { MealType, todayISO } from '@/lib/date';
 import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
 
-const MEALS: { type: MealType; label: string }[] = [
-  { type: 'petit-dejeuner', label: 'Petit-déjeuner' },
-  { type: 'dejeuner', label: 'Déjeuner' },
-  { type: 'diner', label: 'Dîner' },
-  { type: 'collation', label: 'Collation' },
+const MEALS: { type: MealType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { type: 'petit-dejeuner', label: 'Petit-déjeuner', icon: 'cafe-outline' },
+  { type: 'dejeuner', label: 'Déjeuner', icon: 'restaurant-outline' },
+  { type: 'diner', label: 'Dîner', icon: 'moon-outline' },
+  { type: 'collation', label: 'Collation', icon: 'nutrition-outline' },
 ];
 
 export default function JournalScreen() {
@@ -47,6 +47,7 @@ export default function JournalScreen() {
         <MealCard
           key={m.type}
           title={m.label}
+          icon={m.icon}
           entries={entriesForMeal(date, m.type)}
           onAddPress={() => router.push({ pathname: '/add-food', params: { meal: m.type } })}
           onRemoveEntry={removeEntry}

@@ -6,6 +6,7 @@ import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
 
 type Props = {
   title: string;
+  icon: keyof typeof Ionicons.glyphMap;
   entries: FoodEntry[];
   onAddPress: () => void;
   onRemoveEntry: (id: string) => void;
@@ -19,7 +20,7 @@ const fmt = (n: number) => Math.round(n).toLocaleString('fr-FR');
  * pointillé « + Ajouter un aliment ». Repas vide → carte à opacité réduite,
  * label « Vide » (le bouton d'ajout reste actif).
  */
-export function MealCard({ title, entries, onAddPress, onRemoveEntry }: Props) {
+export function MealCard({ title, icon, entries, onAddPress, onRemoveEntry }: Props) {
   const { colors } = useTheme();
   const styles = getStyles(colors);
   const total = entries.reduce((sum, e) => sum + e.kcal, 0);
@@ -28,7 +29,12 @@ export function MealCard({ title, entries, onAddPress, onRemoveEntry }: Props) {
   return (
     <Card style={[styles.card, isEmpty && styles.cardEmpty]}>
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.titleRow}>
+          <View style={styles.iconBadge}>
+            <Ionicons name={icon} size={18} color={colors.accent} />
+          </View>
+          <Text style={styles.title}>{title}</Text>
+        </View>
         {!isEmpty && <Text style={styles.total}>{fmt(total)} kcal</Text>}
       </View>
 
@@ -80,6 +86,19 @@ const getStyles = (colors: ColorPalette) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    iconBadge: {
+      width: 34,
+      height: 34,
+      borderRadius: radius.pill,
+      backgroundColor: colors.accentMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     title: {
       ...typography.sectionTitle,
