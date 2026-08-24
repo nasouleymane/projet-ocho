@@ -31,22 +31,27 @@ SplashScreen.preventAutoHideAsync();
  *
  * Le splash natif reste affiché tant que la police Plus Jakarta Sans n'est
  * pas chargée (`useFonts`), pour éviter un flash de texte en police système
- * au premier rendu.
+ * au premier rendu. Si le chargement échoue (`fontError`), on affiche quand
+ * même l'app plutôt que de rester bloqué indéfiniment sur un écran vide —
+ * `useFonts` renvoie l'erreur séparément de `fontsLoaded`, qui lui ne
+ * repasse jamais à `true` en cas d'échec.
  */
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
     PlusJakartaSans_800ExtraBold,
   });
+  const ready = fontsLoaded || !!fontError;
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+    if (fontError) console.error('Échec du chargement de Plus Jakarta Sans, repli sur la police système :', fontError);
+    if (ready) SplashScreen.hideAsync();
+  }, [ready, fontError]);
 
-  if (!fontsLoaded) return null;
+  if (!ready) return null;
 
   return (
     <SettingsProvider>
