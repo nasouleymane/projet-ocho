@@ -2,7 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from './Card';
 import { FoodEntry } from '@/store/journal';
-import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
+import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 type Props = {
   title: string;
@@ -106,7 +106,7 @@ const getStyles = (colors: ColorPalette) =>
     },
     total: {
       ...typography.body,
-      fontWeight: '500',
+      fontFamily: fontFamily.medium,
       color: colors.textSecondary,
     },
     emptyLabel: {
@@ -152,7 +152,7 @@ const getStyles = (colors: ColorPalette) =>
     },
     addLabel: {
       ...typography.body,
-      fontWeight: '500',
+      fontFamily: fontFamily.medium,
       color: colors.accent,
     },
   });

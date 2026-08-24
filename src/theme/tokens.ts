@@ -25,21 +25,44 @@ export const spacing = {
 } as const;
 
 /**
- * Typographie — police sans-serif système (San Francisco / Roboto).
- * Titres et chiffres clés : poids 500. Texte secondaire / labels : poids 400, 11–13px.
+ * Police — Plus Jakarta Sans (Google Fonts, chargée via `expo-font` dans
+ * `app/_layout.tsx`). Remplace la police système par défaut pour un rendu
+ * plus « designé » (demande explicite : interface plus moderne, esprit
+ * YAZIO). Fichiers statiques par graisse (pas de police variable) : chaque
+ * style référence directement la bonne graisse via `fontFamily` — ne jamais
+ * ajouter `fontWeight` à côté, RN ne sait pas faire correspondre un poids à
+ * un nom de police statique et l'ignore silencieusement (glyphes rendus =
+ * ceux du fichier chargé, quoi que dise `fontWeight`). Pour surligner un
+ * texte au-dessus d'un style existant (ex. `{ ...typography.body,
+ * fontFamily: fontFamily.medium }`), override `fontFamily`, jamais
+ * `fontWeight`.
+ */
+export const fontFamily = {
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
+  extrabold: 'PlusJakartaSans_800ExtraBold',
+} as const;
+
+/**
+ * Titres et chiffres clés : graisses bold/extrabold (contraste fort, look
+ * dashboard). Texte secondaire / labels : medium avec un léger tracking
+ * (`letterSpacing`) plutôt que regular — lecture plus « designée » sur du
+ * texte court en petite taille (11–13px).
  */
 export const typography = {
-  greeting: { fontSize: 24, fontWeight: '500' },
-  screenTitle: { fontSize: 26, fontWeight: '500' },
-  ringValue: { fontSize: 46, fontWeight: '500' },
-  cardValue: { fontSize: 22, fontWeight: '500' },
-  sectionTitle: { fontSize: 17, fontWeight: '500' },
-  macroValue: { fontSize: 14, fontWeight: '500' },
-  statValue: { fontSize: 20, fontWeight: '500' },
-  button: { fontSize: 15, fontWeight: '500' },
-  body: { fontSize: 15, fontWeight: '400' },
-  label: { fontSize: 12, fontWeight: '400' },
-  labelSm: { fontSize: 11, fontWeight: '400' },
+  greeting: { fontSize: 24, fontFamily: fontFamily.bold },
+  screenTitle: { fontSize: 26, fontFamily: fontFamily.bold },
+  ringValue: { fontSize: 46, fontFamily: fontFamily.extrabold },
+  cardValue: { fontSize: 22, fontFamily: fontFamily.bold },
+  sectionTitle: { fontSize: 17, fontFamily: fontFamily.semibold },
+  macroValue: { fontSize: 14, fontFamily: fontFamily.semibold },
+  statValue: { fontSize: 20, fontFamily: fontFamily.bold },
+  button: { fontSize: 15, fontFamily: fontFamily.semibold },
+  body: { fontSize: 15, fontFamily: fontFamily.regular },
+  label: { fontSize: 12, fontFamily: fontFamily.medium, letterSpacing: 0.2 },
+  labelSm: { fontSize: 11, fontFamily: fontFamily.medium, letterSpacing: 0.2 },
 } as const satisfies Record<string, TextStyle>;
 
 /**

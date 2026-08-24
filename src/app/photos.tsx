@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { Card } from '@/components/Card';
 import { usePhotos, ProgressPhoto } from '@/store/photos';
-import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
+import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 const formatDate = (iso: string) => {
   const d = new Date(`${iso}T00:00:00`);
@@ -189,7 +189,7 @@ const getStyles = (colors: ColorPalette) =>
     },
     scanBtnLabel: {
       ...typography.body,
-      fontWeight: '500',
+      fontFamily: fontFamily.medium,
       color: colors.accent,
     },
     emptyCard: {

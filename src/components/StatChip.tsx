@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
+import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 type Props = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -37,7 +37,7 @@ const getStyles = (colors: ColorPalette) =>
     },
     label: {
       ...typography.labelSm,
-      fontWeight: '500',
+      fontFamily: fontFamily.medium,
       color: colors.textSecondary,
     },
     labelHighlighted: {

@@ -31,7 +31,7 @@ import {
 } from '@/lib/units';
 import { DEFAULT_PROFILE, Profile, computePlan } from '@/lib/nutrition';
 import { SEX_OPTIONS, ACTIVITY_OPTIONS, buildGoalOptions } from '@/lib/profileOptions';
-import { useTheme, ColorPalette, MacroKey, radius, spacing, typography } from '@/theme';
+import { useTheme, ColorPalette, MacroKey, radius, spacing, typography, fontFamily } from '@/theme';
 
 const STEPS = 4;
 
@@ -371,7 +371,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   helper: {
     ...typography.body,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.accent,
     textAlign: 'center',
   },
@@ -406,7 +406,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   gapText: {
     ...typography.label,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.onHighlight,
   },
   planValueRow: {
@@ -437,7 +437,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   metricValue: {
     ...typography.body,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.primary,
   },
   metricLabel: {

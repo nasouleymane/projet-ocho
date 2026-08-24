@@ -17,7 +17,7 @@ import { weightUnitLabel, fromCanonicalWeight } from '@/lib/units';
 import { Goal } from '@/lib/nutrition';
 import { computeWeekSummaries, WeekSummary } from '@/lib/progression';
 import { todayISO } from '@/lib/date';
-import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
+import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 const dec = (n: number) => n.toFixed(1).replace('.', ',');
 const fmt = (n: number) => Math.round(Math.abs(n)).toLocaleString('fr-FR');
@@ -228,7 +228,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   graphDelta: {
     ...typography.body,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.accent,
   },
   chartWrap: {

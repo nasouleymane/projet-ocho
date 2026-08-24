@@ -22,7 +22,7 @@ import { FoodEstimateCard } from '@/components/FoodEstimateCard';
 import { useJournal } from '@/store/journal';
 import { estimateMeal, FoodEstimate } from '@/lib/mealEstimate';
 import { defaultMealTypeNow, MealType } from '@/lib/date';
-import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
+import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 type ScanState = 'idle' | 'loading' | 'results' | 'error';
 /** Forme commune à un favori ou un aliment fréquent — les deux s'ajoutent au journal de la même façon. */
@@ -428,7 +428,7 @@ const getStyles = (colors: ColorPalette, cardShadow: object) =>
   },
   mealPillLabel: {
     ...typography.label,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.primary,
   },
   mealPillLabelActive: {
@@ -453,7 +453,7 @@ const getStyles = (colors: ColorPalette, cardShadow: object) =>
   },
   scanBtnLabel: {
     ...typography.body,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.accent,
   },
   scanStatus: {
@@ -468,7 +468,7 @@ const getStyles = (colors: ColorPalette, cardShadow: object) =>
   },
   scanRetryLabel: {
     ...typography.body,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.accent,
     textAlign: 'center',
   },
@@ -498,7 +498,7 @@ const getStyles = (colors: ColorPalette, cardShadow: object) =>
   },
   favName: {
     ...typography.body,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.primary,
   },
   favKcal: {

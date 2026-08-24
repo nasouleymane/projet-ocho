@@ -21,7 +21,7 @@ import { useProfile } from '@/store/profile';
 import { DEFAULT_PROFILE } from '@/lib/nutrition';
 import { WORKOUT_TYPES, WorkoutType, estimateKcal } from '@/lib/workout';
 import { generateId } from '@/lib/id';
-import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
+import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 /** Écran modal : ajout manuel d'une séance d'entraînement (cahier §3.4). */
 export default function AddWorkoutScreen() {
@@ -254,7 +254,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   typePillLabel: {
     ...typography.label,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.primary,
   },
   typePillLabelActive: {
@@ -290,7 +290,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   exerciseName: {
     ...typography.body,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.primary,
   },
   exerciseDetail: {
@@ -310,7 +310,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   addExerciseLabel: {
     ...typography.body,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.accent,
   },
   note: {

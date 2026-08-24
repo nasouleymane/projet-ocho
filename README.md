@@ -206,8 +206,12 @@ une liste d'améliorations d'interface.
   de poids)
 - Recettes personnalisées, log vocal — repoussés sans date
 
-**V2 terminée** (hors recettes/log vocal, repoussés). Prochaine étape :
-liste d'améliorations d'interface (à détailler avec l'utilisateur).
+**V2 terminée** (hors recettes/log vocal, repoussés). Phase actuelle :
+améliorations d'interface, au fil des retours de l'utilisateur sur device
+réel (pas de liste figée à l'avance) :
+- Barres de macros + icônes de repas (inspiré YAZIO) ✅
+- Palette « Graphite & indigo » (clair + sombre), remplace crème + olive ✅
+- Typographie Plus Jakarta Sans, hiérarchie de graisses bold/extrabold ✅
 
 Authentification multi-appareil (Supabase Auth, prévue au cahier §6) :
 objectif confirmé par l'utilisateur, mais explicitement pour la fin — l'app

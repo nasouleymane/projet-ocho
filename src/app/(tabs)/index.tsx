@@ -16,7 +16,7 @@ import { useWeight } from '@/store/weight';
 import { useSettings } from '@/store/settings';
 import { weightUnitLabel, fromCanonicalWeight } from '@/lib/units';
 import { todayISO } from '@/lib/date';
-import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
+import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 /** Formate un entier en séparant les milliers (ex. 1540 → « 1 540 »). */
 const fmt = (n: number) => n.toLocaleString('fr-FR');
@@ -234,7 +234,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   deficitText: {
     ...typography.label,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.onHighlight,
   },
   ringWrap: {
@@ -266,7 +266,7 @@ const getStyles = (colors: ColorPalette) =>
   },
   underRingValue: {
     ...typography.body,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     color: colors.primary,
   },
   underRingLabel: {

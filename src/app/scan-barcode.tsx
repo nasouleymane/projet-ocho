@@ -10,7 +10,7 @@ import { CtaButton } from '@/components/CtaButton';
 import { useJournal } from '@/store/journal';
 import { defaultMealTypeNow, MealType } from '@/lib/date';
 import { lookupProductByBarcode, BarcodeProduct } from '@/lib/barcodeProduct';
-import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
+import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 type ScreenState = 'scanning' | 'loading' | 'result' | 'not_found' | 'error';
 
@@ -264,7 +264,7 @@ const getStyles = (colors: ColorPalette) =>
     },
     retryLabel: {
       ...typography.body,
-      fontWeight: '500',
+      fontFamily: fontFamily.medium,
       color: colors.accent,
     },
     cancelLabel: {
@@ -310,7 +310,7 @@ const getStyles = (colors: ColorPalette) =>
     },
     scanHint: {
       ...typography.body,
-      fontWeight: '500',
+      fontFamily: fontFamily.medium,
       color: '#FFFFFF',
       textAlign: 'center',
     },
@@ -368,7 +368,7 @@ const getStyles = (colors: ColorPalette) =>
     },
     mealPillLabel: {
       ...typography.label,
-      fontWeight: '500',
+      fontFamily: fontFamily.medium,
       color: colors.primary,
     },
     mealPillLabelActive: {
@@ -391,7 +391,7 @@ const getStyles = (colors: ColorPalette) =>
     },
     macroValue: {
       ...typography.body,
-      fontWeight: '600',
+      fontFamily: fontFamily.semibold,
       color: colors.primary,
     },
     macroLabel: {

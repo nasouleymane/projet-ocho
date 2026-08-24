@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme, ColorPalette, radius, spacing, typography, MacroKey } from '@/theme';
+import { useTheme, ColorPalette, radius, spacing, typography, MacroKey, fontFamily } from '@/theme';
 
 type Props = {
   macro: MacroKey;
@@ -56,6 +56,6 @@ const getStyles = (colors: ColorPalette) =>
     },
     value: {
       ...typography.labelSm,
-      fontWeight: '500',
+      fontFamily: fontFamily.medium,
     },
   });

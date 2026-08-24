@@ -33,9 +33,10 @@ Référence visuelle unique à utiliser dans tout le code (constantes de thème)
 
 ## Typographie
 
-- Police : sans-serif système (San Francisco / Roboto selon plateforme)
-- Titres et chiffres clés : poids 500
-- Texte secondaire / labels : poids 400, taille réduite (11–13px)
+- Police : Plus Jakarta Sans (Google Fonts, chargée via `expo-font`) —
+  remplace la police système d'origine pour un rendu plus « designé ».
+- Titres et chiffres clés : graisses bold/extrabold
+- Texte secondaire / labels : medium, léger tracking, taille réduite (11–13px)
 
 ## Navigation basse
 
