@@ -12,7 +12,6 @@ export type MacroDatum = { key: MacroKey; label: string; consumed: number; goal:
 
 export type DashboardData = {
   firstName: string;
-  streakDays: number;
   calories: {
     goal: number; // apport recommandé (kcal)
     consumed: number; // consommées aujourd'hui
@@ -30,7 +29,6 @@ export type DashboardData = {
 
 export const dashboard: DashboardData = {
   firstName: 'Sam',
-  streakDays: 12,
   calories: {
     goal: 2100,
     consumed: 1540,

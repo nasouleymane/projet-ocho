@@ -37,11 +37,11 @@ export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { plan, profile } = useProfile();
-  const { dayTotals } = useJournal();
+  const { dayTotals, streakDays } = useJournal();
   const { dayKcal, countLastDays } = useWorkouts();
   const { latest: latestWeight, deltaSinceStart } = useWeight();
   const { units } = useSettings();
-  const { firstName, streakDays, calories: mockCal, macros: mockMacros, week } = dashboard;
+  const { firstName, calories: mockCal, macros: mockMacros, week } = dashboard;
   const { colors } = useTheme();
   const styles = getStyles(colors);
 

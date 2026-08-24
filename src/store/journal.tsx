@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, ReactNode } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateId } from '@/lib/id';
 import { MealType, todayISO } from '@/lib/date';
+import { computeStreak } from '@/lib/streak';
 
 /**
  * Store du journal alimentaire, persisté localement via AsyncStorage.
@@ -61,6 +62,8 @@ type JournalContextValue = {
   addFavorite: (food: FavoriteInput) => void;
   removeFavorite: (id: string) => void;
   frequentFoods: (limit?: number) => FrequentFood[];
+  /** Jours consécutifs avec au moins un aliment loggé, jusqu'à aujourd'hui. */
+  streakDays: number;
 };
 
 const JournalContext = createContext<JournalContextValue | undefined>(undefined);
@@ -166,6 +169,11 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       });
   };
 
+  const streakDays = useMemo(
+    () => computeStreak(entries.map((e) => e.date), todayISO()),
+    [entries],
+  );
+
   const value = useMemo<JournalContextValue>(
     () => ({
       isLoading,
@@ -178,9 +186,10 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       addFavorite,
       removeFavorite,
       frequentFoods,
+      streakDays,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries, favorites, isLoading],
+    [entries, favorites, isLoading, streakDays],
   );
 
   return <JournalContext.Provider value={value}>{children}</JournalContext.Provider>;
