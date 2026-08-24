@@ -184,7 +184,9 @@ une liste d'améliorations d'interface.
 - Scanner code-barres dédié ✅ (`src/app/scan-barcode.tsx`, Open Food Facts
   en lecture directe depuis l'app — lookup exact, pas besoin de l'Edge
   Function puisqu'il n'y a pas de secret à protéger contrairement à Gemini)
-- Historique de plats fréquents — pas commencé
+- Historique de plats fréquents ✅ (`useJournal().frequentFoods()` — agrège
+  les entrées déjà loggées, aucune nouvelle brique technique ; section
+  « Fréquents » dans `add-food.tsx`, au-dessus de « Favoris »)
 - Notifications — pas commencé
 - Photos avant/après — pas commencé
 - Recettes personnalisées, log vocal — repoussés sans date
