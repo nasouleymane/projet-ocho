@@ -23,6 +23,8 @@ src/
 │   ├── add-workout.tsx   Modal : ajout d'une séance (+ exercices) ✅
 │   ├── workouts.tsx      Liste des séances loguées ✅
 │   ├── add-weight.tsx    Modal : nouvelle pesée ✅
+│   ├── scan-barcode.tsx  Modal : scanner code-barres (Open Food Facts direct) ✅
+│   ├── photos.tsx        Photos avant/après : galerie + lightbox ✅
 │   └── (tabs)/           Écrans à onglets
 │       ├── _layout.tsx   Gate profil + <Slot /> + barre de navigation custom
 │       ├── index.tsx     Dashboard (accueil) ✅
@@ -42,7 +44,8 @@ src/
 │   ├── journal.tsx       Entrées du journal + favoris
 │   ├── workouts.tsx      Séances d'entraînement loguées
 │   ├── weight.tsx        Pesées (mini suivi de poids)
-│   └── settings.tsx      Préférences (thème, unités)
+│   ├── photos.tsx        Photos de progression (métadonnées ; octets sur disque)
+│   └── settings.tsx      Préférences (thème, unités, notifications)
 ├── lib/
 │   ├── nutrition.ts      Calculs Mifflin-St Jeor (BMR/TDEE/macros)
 │   ├── workout.ts        Types de séance + estimation calorique (MET)
@@ -191,8 +194,17 @@ une liste d'améliorations d'interface.
   repas, séance, pesée hebdo à heures fixes ; objectif atteint réactif,
   vérifié à chaque pesée dans `add-weight.tsx`. Réglages dans Profil,
   section repliée par défaut)
-- Photos avant/après — pas commencé
+- Photos avant/après ✅ (`src/app/photos.tsx`, `src/store/photos.tsx`,
+  `src/lib/photoStorage.ts` — galerie + lightbox ; seules les métadonnées
+  (id/date/uri) sont dans AsyncStorage, les octets de l'image vivent sur
+  disque via la nouvelle API classes d'`expo-file-system` v19 (`File`,
+  `Directory`, `Paths`, toutes synchrones — plus besoin d'`await` ni de
+  suffixe `Async`). Carte d'entrée sur l'écran Progression, sous le graphique
+  de poids)
 - Recettes personnalisées, log vocal — repoussés sans date
+
+**V2 terminée** (hors recettes/log vocal, repoussés). Prochaine étape :
+liste d'améliorations d'interface (à détailler avec l'utilisateur).
 
 Authentification multi-appareil (Supabase Auth, prévue au cahier §6) :
 objectif confirmé par l'utilisateur, mais explicitement pour la fin — l'app
