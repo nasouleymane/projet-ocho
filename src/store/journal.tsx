@@ -56,7 +56,8 @@ type JournalContextValue = {
   entriesForDate: (date: string) => FoodEntry[];
   entriesForMeal: (date: string, meal: MealType) => FoodEntry[];
   dayTotals: (date: string) => Totals;
-  addEntry: (input: FoodInput, date?: string) => void;
+  /** Ajoute l'entrée et renvoie le streak résultant (pour détecter un palier franchi côté écran). */
+  addEntry: (input: FoodInput, date?: string) => number;
   removeEntry: (id: string) => void;
   favorites: FavoriteFood[];
   addFavorite: (food: FavoriteInput) => void;
@@ -104,8 +105,10 @@ export function JournalProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const addEntry = (input: FoodInput, date: string = todayISO()) => {
-    persistEntries([...entries, { ...input, id: generateId('food'), date }]);
+  const addEntry = (input: FoodInput, date: string = todayISO()): number => {
+    const next = [...entries, { ...input, id: generateId('food'), date }];
+    persistEntries(next);
+    return computeStreak(next.map((e) => e.date), todayISO());
   };
 
   const removeEntry = (id: string) => {

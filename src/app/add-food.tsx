@@ -22,6 +22,7 @@ import { FoodEstimateCard } from '@/components/FoodEstimateCard';
 import { useJournal } from '@/store/journal';
 import { estimateMeal, FoodEstimate } from '@/lib/mealEstimate';
 import { defaultMealTypeNow, MealType } from '@/lib/date';
+import { crossedMilestone } from '@/lib/streak';
 import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 type ScanState = 'idle' | 'loading' | 'results' | 'error';
@@ -40,7 +41,7 @@ export default function AddFoodScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ meal?: string }>();
-  const { addEntry, favorites, addFavorite, frequentFoods } = useJournal();
+  const { addEntry, favorites, addFavorite, frequentFoods, streakDays } = useJournal();
   const { colors, cardShadow } = useTheme();
   const styles = getStyles(colors, cardShadow);
 
@@ -65,6 +66,16 @@ export default function AddFoodScreen() {
   const canSave = name.trim().length > 0 && kcal > 0;
 
   const close = () => router.back();
+
+  /** Ferme le modal, ou route vers la célébration si l'ajout vient de faire franchir un palier de streak. */
+  const finishLogging = (previousStreak: number, latestStreak: number) => {
+    const milestone = crossedMilestone(previousStreak, latestStreak);
+    if (milestone) {
+      router.replace({ pathname: '/streak-celebration', params: { days: String(milestone) } });
+    } else {
+      close();
+    }
+  };
 
   const runEstimate = async (base64: string) => {
     setLastImageBase64(base64);
@@ -124,8 +135,10 @@ export default function AddFoodScreen() {
   };
 
   const addAllScanResults = () => {
+    const previousStreak = streakDays;
+    let latestStreak = previousStreak;
     scanResults.forEach((r) => {
-      addEntry({
+      latestStreak = addEntry({
         mealType: meal,
         name: r.name,
         quantityLabel: r.quantity_label,
@@ -135,14 +148,14 @@ export default function AddFoodScreen() {
         fatG: r.fat_g,
       });
     });
-    close();
+    finishLogging(previousStreak, latestStreak);
   };
 
   const addQuickFood = (food: QuickFood) => {
     // Champs listés explicitement (pas de spread) : `food` peut être un
     // FrequentFood à l'exécution, avec un champ `count` en trop que le
     // typage de QuickFood masque mais qu'un spread copierait quand même.
-    addEntry({
+    const latestStreak = addEntry({
       mealType: meal,
       name: food.name,
       quantityLabel: food.quantityLabel,
@@ -151,7 +164,7 @@ export default function AddFoodScreen() {
       carbsG: food.carbsG,
       fatG: food.fatG,
     });
-    close();
+    finishLogging(streakDays, latestStreak);
   };
 
   const save = () => {
@@ -164,9 +177,9 @@ export default function AddFoodScreen() {
       carbsG,
       fatG,
     };
-    addEntry({ mealType: meal, ...food });
+    const latestStreak = addEntry({ mealType: meal, ...food });
     if (saveAsFavorite) addFavorite(food);
-    close();
+    finishLogging(streakDays, latestStreak);
   };
 
   return (

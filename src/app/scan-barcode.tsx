@@ -10,6 +10,7 @@ import { CtaButton } from '@/components/CtaButton';
 import { useJournal } from '@/store/journal';
 import { defaultMealTypeNow, MealType } from '@/lib/date';
 import { lookupProductByBarcode, BarcodeProduct } from '@/lib/barcodeProduct';
+import { crossedMilestone } from '@/lib/streak';
 import { useTheme, ColorPalette, radius, spacing, typography, fontFamily } from '@/theme';
 
 type ScreenState = 'scanning' | 'loading' | 'result' | 'not_found' | 'error';
@@ -30,7 +31,7 @@ const MEALS: { type: MealType; label: string }[] = [
 export default function ScanBarcodeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { addEntry } = useJournal();
+  const { addEntry, streakDays } = useJournal();
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
@@ -70,7 +71,7 @@ export default function ScanBarcodeScreen() {
   const addToJournal = () => {
     if (!product) return;
     const factor = quantityG / 100;
-    addEntry({
+    const latestStreak = addEntry({
       mealType: meal,
       name: product.name,
       quantityLabel: `${quantityG} g`,
@@ -79,7 +80,12 @@ export default function ScanBarcodeScreen() {
       carbsG: Math.round(product.carbs100g * factor * 10) / 10,
       fatG: Math.round(product.fat100g * factor * 10) / 10,
     });
-    close();
+    const milestone = crossedMilestone(streakDays, latestStreak);
+    if (milestone) {
+      router.replace({ pathname: '/streak-celebration', params: { days: String(milestone) } });
+    } else {
+      close();
+    }
   };
 
   if (state === 'scanning') {

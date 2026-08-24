@@ -18,3 +18,16 @@ export function computeStreak(loggedDates: string[], today: string): number {
   }
   return count;
 }
+
+/** Paliers de streak célébrés (écran `/streak-celebration`). */
+export const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 365] as const;
+
+/** Palier franchi entre deux valeurs de streak, ou `null` si aucun. */
+export function crossedMilestone(previous: number, next: number): number | null {
+  return STREAK_MILESTONES.find((m) => previous < m && next >= m) ?? null;
+}
+
+/** Prochain palier après celui donné, ou `null` au-delà du dernier. */
+export function nextMilestoneAfter(milestone: number): number | null {
+  return STREAK_MILESTONES.find((m) => m > milestone) ?? null;
+}
