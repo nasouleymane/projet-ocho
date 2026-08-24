@@ -9,7 +9,8 @@ import { NumberField } from '@/components/NumberField';
 import { SelectableCard } from '@/components/SelectableCard';
 import { CtaButton } from '@/components/CtaButton';
 import { useProfile } from '@/store/profile';
-import { useSettings, ThemeMode, UnitSystem } from '@/store/settings';
+import { useSettings, ThemeMode, UnitSystem, NotificationSettings } from '@/store/settings';
+import { NotificationCategory } from '@/lib/notifications';
 import { Profile } from '@/lib/nutrition';
 import { ACTIVITY_OPTIONS, buildGoalOptions } from '@/lib/profileOptions';
 import {
@@ -30,6 +31,14 @@ const THEME_OPTIONS: { label: string; value: ThemeMode }[] = [
   { label: 'Système', value: 'system' },
 ];
 
+const NOTIF_ITEMS: { key: keyof NotificationSettings; label: string; description: string }[] = [
+  { key: 'hydration', label: 'Hydratation', description: '4 rappels par jour (10h, 13h, 16h, 19h)' },
+  { key: 'meals', label: 'Repas', description: 'Petit-déjeuner, déjeuner, dîner' },
+  { key: 'workout', label: 'Séance', description: 'Lundi, mercredi, vendredi à 18h' },
+  { key: 'weeklyWeighIn', label: 'Pesée hebdomadaire', description: 'Chaque lundi à 8h' },
+  { key: 'goalReached', label: 'Objectif atteint', description: 'Dès que ton poids cible est atteint' },
+];
+
 const dec = (n: number) => n.toFixed(1).replace('.', ',');
 
 /**
@@ -40,7 +49,15 @@ const dec = (n: number) => n.toFixed(1).replace('.', ',');
 export default function ProfilScreen() {
   const insets = useSafeAreaInsets();
   const { profile, saveProfile } = useProfile();
-  const { units, themeMode, setUnits, setThemeMode } = useSettings();
+  const {
+    units,
+    themeMode,
+    notifications,
+    setUnits,
+    setThemeMode,
+    setNotificationCategory,
+    setGoalReachedEnabled,
+  } = useSettings();
   const { colors, macroColors } = useTheme();
   const styles = getStyles(colors);
 
@@ -50,6 +67,16 @@ export default function ProfilScreen() {
   }, [profile]);
 
   const [objectivesOpen, setObjectivesOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const toggleNotification = (key: keyof NotificationSettings) => {
+    const next = !notifications[key];
+    if (key === 'goalReached') {
+      setGoalReachedEnabled(next);
+    } else {
+      setNotificationCategory(key as NotificationCategory, next);
+    }
+  };
 
   if (!draft) return <View style={styles.screen} />;
 
@@ -66,6 +93,12 @@ export default function ProfilScreen() {
   const goalLabel = GOAL_OPTIONS.find((o) => o.value === draft.goal)?.title ?? '';
   const targetLabel = `${dec(fromCanonicalWeight(draft.targetWeightKg, units))} ${weightUnit}`;
   const objectivesSummary = `${goalLabel} · ${activityLabel} · ${targetLabel}`;
+
+  const activeNotifCount = NOTIF_ITEMS.filter((item) => notifications[item.key]).length;
+  const notificationsSummary =
+    activeNotifCount === 0
+      ? 'Aucun rappel actif'
+      : `${activeNotifCount} rappel${activeNotifCount > 1 ? 's' : ''} actif${activeNotifCount > 1 ? 's' : ''}`;
 
   return (
     <ScrollView
@@ -161,6 +194,50 @@ export default function ProfilScreen() {
       />
 
       <View style={styles.section}>
+        <Pressable
+          onPress={() => setNotificationsOpen((o) => !o)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: notificationsOpen }}
+        >
+          <Card style={styles.collapsibleCard}>
+            <View style={styles.collapsibleTexts}>
+              <Text style={styles.sectionLabel}>Notifications</Text>
+              <Text style={styles.collapsibleSummary}>{notificationsSummary}</Text>
+            </View>
+            <Ionicons
+              name={notificationsOpen ? 'chevron-up' : 'chevron-down'}
+              size={20}
+              color={colors.textSecondary}
+            />
+          </Card>
+        </Pressable>
+
+        {notificationsOpen && (
+          <Card style={styles.notifCard}>
+            {NOTIF_ITEMS.map((item, i) => (
+              <View key={item.key}>
+                {i > 0 && <View style={styles.divider} />}
+                <Pressable
+                  onPress={() => toggleNotification(item.key)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: notifications[item.key] }}
+                  style={styles.notifRow}
+                >
+                  <View style={styles.notifTexts}>
+                    <Text style={styles.fieldLabel}>{item.label}</Text>
+                    <Text style={styles.notifDescription}>{item.description}</Text>
+                  </View>
+                  <View style={[styles.checkbox, notifications[item.key] && styles.checkboxChecked]}>
+                    {notifications[item.key] && <Ionicons name="checkmark" size={14} color={colors.background} />}
+                  </View>
+                </Pressable>
+              </View>
+            ))}
+          </Card>
+        )}
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionLabel}>Préférences</Text>
         <Card style={styles.prefsCard}>
           <View style={styles.fieldRow}>
@@ -220,6 +297,38 @@ const getStyles = (colors: ColorPalette) =>
     },
     prefsCard: {
       gap: spacing.md,
+    },
+    notifCard: {
+      gap: 0,
+    },
+    notifRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    notifTexts: {
+      flex: 1,
+      gap: 2,
+    },
+    notifDescription: {
+      ...typography.labelSm,
+      color: colors.textSecondary,
+    },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+    },
+    checkboxChecked: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
     cardList: {
       gap: spacing.md,

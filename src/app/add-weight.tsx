@@ -11,7 +11,16 @@ import { useWeight } from '@/store/weight';
 import { useProfile } from '@/store/profile';
 import { useSettings } from '@/store/settings';
 import { weightUnitLabel, fromCanonicalWeight, toCanonicalWeight } from '@/lib/units';
+import { Goal } from '@/lib/nutrition';
+import { notifyGoalReached } from '@/lib/notifications';
 import { useTheme, ColorPalette, spacing, typography } from '@/theme';
+
+/** Vrai si `weightKg` a atteint (ou dépassé dans le bon sens) l'objectif. Le maintien n'a pas de cible ponctuelle à « atteindre ». */
+function hasReachedGoal(weightKg: number, targetWeightKg: number, goal: Goal): boolean {
+  if (goal === 'seche') return weightKg <= targetWeightKg;
+  if (goal === 'prise') return weightKg >= targetWeightKg;
+  return false;
+}
 
 /**
  * Écran modal : nouvelle pesée. Met aussi à jour le poids courant du profil
@@ -23,7 +32,7 @@ export default function AddWeightScreen() {
   const insets = useSafeAreaInsets();
   const { addEntry, latest } = useWeight();
   const { profile, saveProfile } = useProfile();
-  const { units } = useSettings();
+  const { units, notifications } = useSettings();
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
@@ -33,8 +42,19 @@ export default function AddWeightScreen() {
   const close = () => router.back();
 
   const save = () => {
+    const previousWeightKg = latest()?.weightKg;
     addEntry(weightKg);
     if (profile) saveProfile({ ...profile, weightKg });
+
+    if (notifications.goalReached && profile) {
+      const reachedNow = hasReachedGoal(weightKg, profile.targetWeightKg, profile.goal);
+      const reachedBefore =
+        previousWeightKg !== undefined && hasReachedGoal(previousWeightKg, profile.targetWeightKg, profile.goal);
+      if (reachedNow && !reachedBefore) {
+        notifyGoalReached(profile.targetWeightKg);
+      }
+    }
+
     close();
   };
 
