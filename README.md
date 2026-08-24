@@ -32,7 +32,7 @@ src/
 │       ├── progression.tsx  Progression (courbe + timeline) ✅
 │       └── profil.tsx    Profil / réglages (objectifs, thème, unités) ✅
 ├── components/           Briques UI réutilisables
-│   ├── Card, ProgressRing, MacroCircle, StreakBadge, MealCard,
+│   ├── Card, ProgressRing, MacroBar, StreakBadge, MealCard,
 │   ├── QuickButton, WeekStat, PlaceholderScreen, NumberField,
 │   ├── SegmentedControl, SelectableCard, CtaButton, OnboardingProgress,
 │   ├── WeightChart        Courbe de poids (SVG polyline)
