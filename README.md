@@ -187,7 +187,10 @@ une liste d'améliorations d'interface.
 - Historique de plats fréquents ✅ (`useJournal().frequentFoods()` — agrège
   les entrées déjà loggées, aucune nouvelle brique technique ; section
   « Fréquents » dans `add-food.tsx`, au-dessus de « Favoris »)
-- Notifications — pas commencé
+- Notifications ✅ (`src/lib/notifications.ts`, 100 % local — hydratation,
+  repas, séance, pesée hebdo à heures fixes ; objectif atteint réactif,
+  vérifié à chaque pesée dans `add-weight.tsx`. Réglages dans Profil,
+  section repliée par défaut)
 - Photos avant/après — pas commencé
 - Recettes personnalisées, log vocal — repoussés sans date
 
