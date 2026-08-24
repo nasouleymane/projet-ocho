@@ -212,6 +212,9 @@ réel (pas de liste figée à l'avance) :
 - Barres de macros + icônes de repas (inspiré YAZIO) ✅
 - Palette « Graphite & indigo » (clair + sombre), remplace crème + olive ✅
 - Typographie Plus Jakarta Sans, hiérarchie de graisses bold/extrabold ✅
+- Streak réel (`src/lib/streak.ts`) : jours consécutifs avec au moins un
+  aliment loggé, grâce d'un jour avant remise à 0. Le badge existait déjà
+  sur le Dashboard mais affichait une valeur mock (12 fixe) ✅
 
 Authentification multi-appareil (Supabase Auth, prévue au cahier §6) :
 objectif confirmé par l'utilisateur, mais explicitement pour la fin — l'app
