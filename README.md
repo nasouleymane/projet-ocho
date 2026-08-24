@@ -25,6 +25,7 @@ src/
 │   ├── add-weight.tsx    Modal : nouvelle pesée ✅
 │   ├── scan-barcode.tsx  Modal : scanner code-barres (Open Food Facts direct) ✅
 │   ├── photos.tsx        Photos avant/après : galerie + lightbox ✅
+│   ├── streak-celebration.tsx  Modal : palier de streak franchi ✅
 │   └── (tabs)/           Écrans à onglets
 │       ├── _layout.tsx   Gate profil + <Slot /> + barre de navigation custom
 │       ├── index.tsx     Dashboard (accueil) ✅
@@ -215,6 +216,10 @@ réel (pas de liste figée à l'avance) :
 - Streak réel (`src/lib/streak.ts`) : jours consécutifs avec au moins un
   aliment loggé, grâce d'un jour avant remise à 0. Le badge existait déjà
   sur le Dashboard mais affichait une valeur mock (12 fixe) ✅
+- Écran de palier de streak (`src/app/streak-celebration.tsx`) : déclenché
+  depuis `add-food.tsx`/`scan-barcode.tsx` quand un ajout fait franchir un
+  palier (3/7/14/30/60/100/365 j — `addEntry()` renvoie le streak résultant
+  pour détecter le franchissement sans attendre un re-render) ✅
 
 Authentification multi-appareil (Supabase Auth, prévue au cahier §6) :
 objectif confirmé par l'utilisateur, mais explicitement pour la fin — l'app
