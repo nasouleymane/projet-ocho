@@ -5,15 +5,17 @@ import { ProfileProvider } from '@/store/profile';
 import { JournalProvider } from '@/store/journal';
 import { WorkoutsProvider } from '@/store/workouts';
 import { WeightProvider } from '@/store/weight';
+import { PhotosProvider } from '@/store/photos';
 import { SettingsProvider } from '@/store/settings';
 import { ThemeProvider, useTheme } from '@/theme';
 
 /**
- * Layout racine (Stack). Profil (onboarding), Journal, Entraînements, Poids
- * et Préférences sont chargés ici et partagés à toute l'app. `SettingsProvider`
- * doit englober `ThemeProvider` (le thème dépend du réglage `themeMode`). Les
- * écrans à onglets vivent dans `(tabs)` ; `onboarding`/`workouts` sont hors
- * navigation basse (push), `add-food`/`add-workout`/`add-weight` en modal.
+ * Layout racine (Stack). Profil (onboarding), Journal, Entraînements, Poids,
+ * Photos et Préférences sont chargés ici et partagés à toute l'app.
+ * `SettingsProvider` doit englober `ThemeProvider` (le thème dépend du
+ * réglage `themeMode`). Les écrans à onglets vivent dans `(tabs)` ;
+ * `onboarding`/`workouts`/`photos` sont hors navigation basse (push),
+ * `add-food`/`add-workout`/`add-weight` en modal.
  */
 export default function RootLayout() {
   return (
@@ -23,9 +25,11 @@ export default function RootLayout() {
           <JournalProvider>
             <WorkoutsProvider>
               <WeightProvider>
-                <SafeAreaProvider>
-                  <RootNavigation />
-                </SafeAreaProvider>
+                <PhotosProvider>
+                  <SafeAreaProvider>
+                    <RootNavigation />
+                  </SafeAreaProvider>
+                </PhotosProvider>
               </WeightProvider>
             </WorkoutsProvider>
           </JournalProvider>
@@ -51,6 +55,7 @@ function RootNavigation() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="workouts" />
+        <Stack.Screen name="photos" />
         <Stack.Screen name="add-food" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add-workout" options={{ presentation: 'modal' }} />
         <Stack.Screen name="add-weight" options={{ presentation: 'modal' }} />

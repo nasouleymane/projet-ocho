@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Image, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
@@ -10,6 +11,7 @@ import { useWeight } from '@/store/weight';
 import { useWorkouts } from '@/store/workouts';
 import { useJournal } from '@/store/journal';
 import { useProfile } from '@/store/profile';
+import { usePhotos } from '@/store/photos';
 import { useSettings } from '@/store/settings';
 import { weightUnitLabel, fromCanonicalWeight } from '@/lib/units';
 import { Goal } from '@/lib/nutrition';
@@ -35,11 +37,13 @@ function isFavorable(deltaKg: number, goal: Goal): boolean {
 
 /** Écran Progression (cahier §3.5) : courbe de poids + timeline narrative. */
 export default function ProgressionScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { entries: weightEntries, deltaSinceStart } = useWeight();
   const { workouts } = useWorkouts();
   const { dayTotals } = useJournal();
   const { plan, profile } = useProfile();
+  const { photos } = usePhotos();
   const { units } = useSettings();
   const { colors } = useTheme();
   const styles = getStyles(colors);
@@ -87,6 +91,27 @@ export default function ProgressionScreen() {
           <EmptyGraph hasStart={hasStart} />
         )}
       </Card>
+
+      <Pressable onPress={() => router.push('/photos')} accessibilityRole="button">
+        <Card style={styles.photosCard}>
+          <View style={styles.photosHeader}>
+            <Text style={styles.graphTitle}>Photos</Text>
+            <View style={styles.photosHeaderRight}>
+              {photos.length > 0 && <Text style={styles.photosCount}>{photos.length}</Text>}
+              <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+            </View>
+          </View>
+          {photos.length > 0 ? (
+            <View style={styles.photosPreviewRow}>
+              {photos.slice(0, 4).map((p) => (
+                <Image key={p.id} source={{ uri: p.uri }} style={styles.photoThumb} />
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.emptySubtitle}>Ajoute une photo pour suivre ta progression visuellement.</Text>
+          )}
+        </Card>
+      </Pressable>
 
       <View style={styles.timelineSection}>
         <Text style={styles.sectionTitle}>Ton parcours</Text>
@@ -234,6 +259,35 @@ const getStyles = (colors: ColorPalette) =>
     ...typography.body,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  photosCard: {
+    gap: spacing.sm,
+  },
+  photosHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  photosHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  photosCount: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  photosPreviewRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  photoThumb: {
+    flex: 1,
+    aspectRatio: 3 / 4,
+    borderRadius: radius.card2,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   timelineSection: {
     gap: spacing.md,
