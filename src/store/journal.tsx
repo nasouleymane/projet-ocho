@@ -34,6 +34,17 @@ export type FavoriteFood = {
   fatG: number;
 };
 
+/** Aliment détecté comme fréquent depuis l'historique (pas une saisie utilisateur, pas persisté à part). */
+export type FrequentFood = {
+  name: string;
+  quantityLabel: string;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  count: number;
+};
+
 export type FoodInput = Omit<FoodEntry, 'id' | 'date'>;
 export type FavoriteInput = Omit<FavoriteFood, 'id'>;
 
@@ -49,6 +60,7 @@ type JournalContextValue = {
   favorites: FavoriteFood[];
   addFavorite: (food: FavoriteInput) => void;
   removeFavorite: (id: string) => void;
+  frequentFoods: (limit?: number) => FrequentFood[];
 };
 
 const JournalContext = createContext<JournalContextValue | undefined>(undefined);
@@ -120,6 +132,40 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 },
     );
 
+  /**
+   * Aliments les plus souvent loggés, tous repas/dates confondus — pas une
+   * liste que l'utilisateur curate (contrairement aux favoris), déduite de
+   * l'historique. Un plat compte comme « fréquent » à partir de 2 occurrences
+   * (une seule occurrence n'a rien de fréquent). Les valeurs affichées sont
+   * celles de la dernière fois loggée (plus représentatif qu'une moyenne si
+   * la portion a varié), `entries` étant append-only donc déjà en ordre
+   * chronologique.
+   */
+  const frequentFoods = (limit: number = 8): FrequentFood[] => {
+    const byName = new Map<string, FoodEntry[]>();
+    for (const e of entries) {
+      const list = byName.get(e.name);
+      if (list) list.push(e);
+      else byName.set(e.name, [e]);
+    }
+    return Array.from(byName.values())
+      .filter((list) => list.length >= 2)
+      .sort((a, b) => b.length - a.length)
+      .slice(0, limit)
+      .map((list) => {
+        const latest = list[list.length - 1];
+        return {
+          name: latest.name,
+          quantityLabel: latest.quantityLabel,
+          kcal: latest.kcal,
+          proteinG: latest.proteinG,
+          carbsG: latest.carbsG,
+          fatG: latest.fatG,
+          count: list.length,
+        };
+      });
+  };
+
   const value = useMemo<JournalContextValue>(
     () => ({
       isLoading,
@@ -131,6 +177,7 @@ export function JournalProvider({ children }: { children: ReactNode }) {
       favorites,
       addFavorite,
       removeFavorite,
+      frequentFoods,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [entries, favorites, isLoading],

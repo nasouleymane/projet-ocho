@@ -19,12 +19,14 @@ import { NumberField } from '@/components/NumberField';
 import { TextField } from '@/components/TextField';
 import { CtaButton } from '@/components/CtaButton';
 import { FoodEstimateCard } from '@/components/FoodEstimateCard';
-import { useJournal, FavoriteFood } from '@/store/journal';
+import { useJournal } from '@/store/journal';
 import { estimateMeal, FoodEstimate } from '@/lib/mealEstimate';
 import { defaultMealTypeNow, MealType } from '@/lib/date';
 import { useTheme, ColorPalette, radius, spacing, typography } from '@/theme';
 
 type ScanState = 'idle' | 'loading' | 'results' | 'error';
+/** Forme commune à un favori ou un aliment fréquent — les deux s'ajoutent au journal de la même façon. */
+type QuickFood = { name: string; quantityLabel: string; kcal: number; proteinG: number; carbsG: number; fatG: number };
 
 const MEALS: { type: MealType; label: string }[] = [
   { type: 'petit-dejeuner', label: 'Petit-déj.' },
@@ -38,13 +40,14 @@ export default function AddFoodScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ meal?: string }>();
-  const { addEntry, favorites, addFavorite } = useJournal();
+  const { addEntry, favorites, addFavorite, frequentFoods } = useJournal();
   const { colors, cardShadow } = useTheme();
   const styles = getStyles(colors, cardShadow);
 
   const initialMeal =
     MEALS.find((m) => m.type === params.meal)?.type ?? defaultMealTypeNow();
   const [meal, setMeal] = useState<MealType>(initialMeal);
+  const frequent = frequentFoods();
 
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -135,15 +138,18 @@ export default function AddFoodScreen() {
     close();
   };
 
-  const addFromFavorite = (fav: FavoriteFood) => {
+  const addQuickFood = (food: QuickFood) => {
+    // Champs listés explicitement (pas de spread) : `food` peut être un
+    // FrequentFood à l'exécution, avec un champ `count` en trop que le
+    // typage de QuickFood masque mais qu'un spread copierait quand même.
     addEntry({
       mealType: meal,
-      name: fav.name,
-      quantityLabel: fav.quantityLabel,
-      kcal: fav.kcal,
-      proteinG: fav.proteinG,
-      carbsG: fav.carbsG,
-      fatG: fav.fatG,
+      name: food.name,
+      quantityLabel: food.quantityLabel,
+      kcal: food.kcal,
+      proteinG: food.proteinG,
+      carbsG: food.carbsG,
+      fatG: food.fatG,
     });
     close();
   };
@@ -273,6 +279,31 @@ export default function AddFoodScreen() {
 
           {scanState === 'idle' && (
             <>
+              {frequent.length > 0 && (
+                <View style={styles.favSection}>
+                  <Text style={styles.sectionLabel}>Fréquents</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.favRow}
+                  >
+                    {frequent.map((f) => (
+                      <Pressable
+                        key={f.name}
+                        onPress={() => addQuickFood(f)}
+                        accessibilityRole="button"
+                        style={styles.favChip}
+                      >
+                        <Text style={styles.favName} numberOfLines={1}>
+                          {f.name}
+                        </Text>
+                        <Text style={styles.favKcal}>{f.kcal} kcal · ×{f.count}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
               {favorites.length > 0 && (
                 <View style={styles.favSection}>
                   <Text style={styles.sectionLabel}>Favoris</Text>
@@ -284,7 +315,7 @@ export default function AddFoodScreen() {
                     {favorites.map((f) => (
                       <Pressable
                         key={f.id}
-                        onPress={() => addFromFavorite(f)}
+                        onPress={() => addQuickFood(f)}
                         accessibilityRole="button"
                         style={styles.favChip}
                       >
