@@ -89,16 +89,19 @@ Tous les jetons visuels (couleurs, rayons, typographie) sont dérivés de
   déclarés dans le même fichier — chacun refait son propre `useTheme()`).
   `useTheme()` (dans `src/theme/ThemeContext.tsx`) résout `themeMode`
   (`light`/`dark`/`system`, réglable dans Profil) contre `useColorScheme()`
-  quand `system` est choisi. La palette sombre est une proposition de design
-  (non maquettée dans `DOCS/`) qui reprend l'identité crème + vert olive en
-  inversant la luminance — voir les commentaires en tête de `src/theme/colors.ts`.
-  Deux pièges résolus : `highlight` (lime) reste volontairement identique dans
-  les deux palettes (couleur d'accent ponctuel, pas un fond), donc le texte
-  posé dessus utilise un champ dédié `onHighlight` **fixe** plutôt que `primary`
-  (qui, lui, s'inverse en sombre et casserait le contraste) ; et l'ombre portée
-  des cartes (`cardShadow`) n'a de sens qu'en clair — `cardShadowFor(scheme)`
-  renvoie une ombre nulle en sombre, l'élévation venant du contraste
-  surface/fond à la place.
+  quand `system` est choisi. Palette « Graphite & indigo » (neutres froids +
+  un seul accent) depuis un retour direct de l'utilisateur après test sur
+  device réel — l'identité crème + vert olive d'origine ne convenait ni en
+  clair ni en sombre. L'accent diverge volontairement entre les deux thèmes
+  (bleu `#2563EB` en clair, indigo `#818CF8` en sombre) : un même indigo
+  saturé lit comme du violet sur fond blanc mais comme du bleu sur fond
+  sombre — effet de contexte de luminance, pas une incohérence. Détail complet
+  en tête de `src/theme/colors.ts`. `highlight`/`onHighlight` (fond des
+  badges type streak) sont dérivés de ce même accent — teinte pâle + texte
+  foncé assorti en clair, inversé en sombre — plutôt qu'une couleur fixe
+  indépendante. L'ombre portée des cartes (`cardShadow`), elle, n'a de sens
+  qu'en clair — `cardShadowFor(scheme)` renvoie une ombre nulle en sombre,
+  l'élévation venant du contraste surface/fond à la place.
 - **Unités (kg/lb, cm/in)**, réglables dans Profil : le stockage reste
   **toujours** métrique (`weightKg`, `heightCm`) ; `src/lib/units.ts` ne
   convertit qu'aux limites d'affichage/saisie (`fromCanonicalWeight`/

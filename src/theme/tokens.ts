@@ -55,7 +55,7 @@ export function cardShadowFor(scheme: 'light' | 'dark'): ViewStyle {
   }
   return Platform.select({
     ios: {
-      shadowColor: '#1E2A1A',
+      shadowColor: '#14151A',
       shadowOpacity: 0.06,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 6 },
