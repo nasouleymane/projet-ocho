@@ -1,16 +1,19 @@
 import { View, StyleSheet } from 'react-native';
 import { Slot, Redirect } from 'expo-router';
 import { BottomTabBar } from '@/components/BottomTabBar';
+import { useAuth } from '@/store/auth';
 import { useProfile } from '@/store/profile';
 import { useTheme, ColorPalette } from '@/theme';
 
-/** Gate : redirige vers l'onboarding tant que le profil n'existe pas. */
+/** Gate à deux étages : pas de session → /auth ; session sans profil → /onboarding. */
 export default function TabsLayout() {
-  const { isLoading, hasProfile } = useProfile();
+  const { isLoading: authLoading, session } = useAuth();
+  const { isLoading: profileLoading, hasProfile } = useProfile();
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
-  if (isLoading) return <View style={styles.container} />;
+  if (authLoading || (session && profileLoading)) return <View style={styles.container} />;
+  if (!session) return <Redirect href="/auth" />;
   if (!hasProfile) return <Redirect href="/onboarding" />;
 
   return (

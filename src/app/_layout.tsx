@@ -11,6 +11,7 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import { AuthProvider } from '@/store/auth';
 import { ProfileProvider } from '@/store/profile';
 import { JournalProvider } from '@/store/journal';
 import { WorkoutsProvider } from '@/store/workouts';
@@ -22,8 +23,11 @@ import { ThemeProvider, useTheme } from '@/theme';
 SplashScreen.preventAutoHideAsync();
 
 /**
- * Layout racine (Stack). Profil (onboarding), Journal, Entraînements, Poids,
- * Photos et Préférences sont chargés ici et partagés à toute l'app.
+ * Layout racine (Stack). Comptes, Profil (onboarding), Journal,
+ * Entraînements, Poids, Photos et Préférences sont chargés ici et partagés à
+ * toute l'app. `AuthProvider` doit être le provider le plus externe : les 6
+ * stores de données (dont `SettingsProvider`, depuis la synchronisation
+ * complète) appellent tous `useAuth()` pour savoir quoi charger/synchroniser.
  * `SettingsProvider` doit englober `ThemeProvider` (le thème dépend du
  * réglage `themeMode`). Les écrans à onglets vivent dans `(tabs)` ;
  * `onboarding`/`workouts`/`photos` sont hors navigation basse (push),
@@ -54,23 +58,25 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <SettingsProvider>
-      <ThemeProvider>
-        <ProfileProvider>
-          <JournalProvider>
-            <WorkoutsProvider>
-              <WeightProvider>
-                <PhotosProvider>
-                  <SafeAreaProvider>
-                    <RootNavigation />
-                  </SafeAreaProvider>
-                </PhotosProvider>
-              </WeightProvider>
-            </WorkoutsProvider>
-          </JournalProvider>
-        </ProfileProvider>
-      </ThemeProvider>
-    </SettingsProvider>
+    <AuthProvider>
+      <SettingsProvider>
+        <ThemeProvider>
+          <ProfileProvider>
+            <JournalProvider>
+              <WorkoutsProvider>
+                <WeightProvider>
+                  <PhotosProvider>
+                    <SafeAreaProvider>
+                      <RootNavigation />
+                    </SafeAreaProvider>
+                  </PhotosProvider>
+                </WeightProvider>
+              </WorkoutsProvider>
+            </JournalProvider>
+          </ProfileProvider>
+        </ThemeProvider>
+      </SettingsProvider>
+    </AuthProvider>
   );
 }
 
@@ -88,6 +94,7 @@ function RootNavigation() {
         }}
       >
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="auth" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="workouts" />
         <Stack.Screen name="photos" />
