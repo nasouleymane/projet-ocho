@@ -66,13 +66,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUpWithEmail = async (email: string, password: string): Promise<AuthResult> => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error: error?.message ?? null };
+    try {
+      const { error } = await supabase.auth.signUp({ email, password });
+      return { error: error?.message ?? null };
+    } catch (err) {
+      // Ne jamais laisser une exception non rattrapée ici (ex. coupure
+      // réseau) : sinon l'écran reste bloqué en chargement indéfiniment,
+      // le bouton restant désactivé pour toute tentative suivante.
+      return { error: err instanceof Error ? err.message : 'Connexion impossible.' };
+    }
   };
 
   const signInWithEmail = async (email: string, password: string): Promise<AuthResult> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: error?.message ?? null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : 'Connexion impossible.' };
+    }
   };
 
   const signInWithOAuth = async (provider: OAuthProvider): Promise<AuthResult> => {

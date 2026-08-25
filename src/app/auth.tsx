@@ -26,7 +26,11 @@ export default function AuthScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canSubmit = email.trim().length > 0 && password.length >= 6 && !isSubmitting;
+  // Pas de contrainte de longueur côté client : le placeholder qui l'indique
+  // disparaît dès la saisie, un bouton désactivé sans explication visible
+  // serait indiscernable d'un bug. Supabase valide côté serveur et renvoie
+  // un message clair (affiché ci-dessous) si le mot de passe est trop court.
+  const canSubmit = email.trim().length > 0 && password.length > 0 && !isSubmitting;
 
   const submitEmail = async () => {
     if (!canSubmit) return;
