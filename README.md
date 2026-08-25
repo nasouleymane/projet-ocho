@@ -221,6 +221,23 @@ réel (pas de liste figée à l'avance) :
   palier (3/7/14/30/60/100/365 j — `addEntry()` renvoie le streak résultant
   pour détecter le franchissement sans attendre un re-render) ✅
 
+**Comptes utilisateurs** (auth + synchronisation complète, Supabase) — gros
+chantier, découpé en 4 phases indépendamment testables (plan détaillé dans
+l'historique de conversation) :
+1. Auth (email + Google + Apple, flux web) + sync profil/réglages ✅
+2. Journal, poids, séances — à venir
+3. Photos + Supabase Storage — à venir
+4. Connexion Apple — bloquée sur une action manuelle : inscription au
+   Apple Developer Program (99 $/an) + config dans le portail Apple, puis
+   dans Supabase Dashboard → Authentication → Providers → Apple
+
+Connexion Google/Apple en **flux web** (`WebBrowser.openAuthSessionAsync`,
+pas de SDK natif) : fonctionne dans Expo Go sans dev client. Pour que
+Google fonctionne réellement (au-delà du rendu de l'écran), il faut créer
+un client OAuth dans Google Cloud Console (gratuit) et le renseigner dans
+Supabase Dashboard → Authentication → Providers → Google — étape manuelle,
+pas automatisable depuis le code.
+
 Authentification multi-appareil (Supabase Auth, prévue au cahier §6) :
 objectif confirmé par l'utilisateur, mais explicitement pour la fin — l'app
 reste 100 % locale (AsyncStorage) pour l'instant.
