@@ -230,7 +230,11 @@ l'historique de conversation) :
    affiche un message explicite plutôt que de rester silencieux) ; mot de
    passe oublié via `src/app/reset-password.tsx` (lien email → nouvelle
    session de récupération → `supabase.auth.updateUser`)
-2. Journal, poids, séances — à venir
+2. Journal, poids, séances ✅ — tables `journal_entries`/`favorite_foods`/
+   `weight_entries`/`workouts` (RLS scopée au propriétaire) ; identifiants
+   passés de `generateId()` à `Crypto.randomUUID()` pour les entités
+   synchronisées (colonnes `id uuid`) ; `addEntry()` du journal reste
+   synchrone (contrainte du streak, jamais d'attente réseau)
 3. Photos + Supabase Storage — à venir
 4. Connexion Apple — bloquée sur une action manuelle : inscription au
    Apple Developer Program (99 $/an) + config dans le portail Apple, puis
