@@ -1,17 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import { supabase } from './supabase';
+import { uploadProgressPhoto } from './photoStorage';
 import { Profile } from './nutrition';
 import { Settings } from '@/store/settings';
 import { FoodEntry, FavoriteFood } from '@/store/journal';
 import { WeightEntry } from '@/store/weight';
 import { Workout } from '@/store/workouts';
+import { ProgressPhoto } from '@/store/photos';
 
 /**
  * Migration ponctuelle des données locales existantes vers Supabase, au tout
  * premier login d'un compte (cahier « comptes utilisateurs »). Couvre
- * profil, réglages, journal (+ favoris), poids et séances — photos suivront
- * en phase 3.
+ * profil, réglages, journal (+ favoris), poids, séances et photos.
  *
  * Appelée uniquement par `AuthProvider` sur l'événement `SIGNED_IN`, et
  * *avant* que les stores de données n'hydratent depuis Supabase pour ce
@@ -143,6 +144,28 @@ export async function migrateLocalDataIfNeeded(userId: string): Promise<void> {
             })),
           );
           await AsyncStorage.setItem('ocho.workouts.v1', JSON.stringify(workouts));
+        }
+      }
+
+      const rawPhotos = await AsyncStorage.getItem('ocho.photos.v1');
+      if (rawPhotos) {
+        const legacyPhotos: { id: string; date: string; uri: string }[] = JSON.parse(rawPhotos);
+        if (legacyPhotos.length > 0) {
+          const migrated: ProgressPhoto[] = [];
+          // séquentiel plutôt que Promise.all : chaque étape lit un fichier local
+          // et l'envoie sur le réseau, un lot en parallèle serait inutilement
+          // gourmand pour le nombre de photos réellement attendu ici.
+          for (const photo of legacyPhotos) {
+            const filename = photo.uri.split('/').pop() ?? photo.id;
+            const storagePath = `${userId}/${filename}`;
+            await uploadProgressPhoto(userId, photo.uri, filename);
+            const id = Crypto.randomUUID();
+            await supabase
+              .from('progress_photos')
+              .insert({ id, user_id: userId, date: photo.date, storage_path: storagePath });
+            migrated.push({ id, date: photo.date, uri: photo.uri, storagePath });
+          }
+          await AsyncStorage.setItem('ocho.photos.v1', JSON.stringify(migrated));
         }
       }
     }

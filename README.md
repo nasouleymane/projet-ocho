@@ -235,7 +235,15 @@ l'historique de conversation) :
    passés de `generateId()` à `Crypto.randomUUID()` pour les entités
    synchronisées (colonnes `id uuid`) ; `addEntry()` du journal reste
    synchrone (contrainte du streak, jamais d'attente réseau)
-3. Photos + Supabase Storage — à venir
+3. Photos + Supabase Storage ✅ — table `progress_photos` (métadonnées :
+   date, `storage_path`) + bucket privé `progress-photos`
+   (`{user_id}/{filename}`, policies Storage via
+   `(storage.foldername(name))[1] = auth.uid()::text`) ; la copie locale du
+   fichier reste synchrone (grille instantanée inchangée), l'upload Storage
+   part en fire-and-forget à côté ; au premier chargement sur un nouvel
+   appareil, chaque photo distante est retéléchargée une fois vers le même
+   dossier local via une URL signée (`File.downloadFileAsync`), donc
+   `photos.tsx` continue de pointer vers des URIs locales sans changement
 4. Connexion Apple — bloquée sur une action manuelle : inscription au
    Apple Developer Program (99 $/an) + config dans le portail Apple, puis
    dans Supabase Dashboard → Authentication → Providers → Apple
