@@ -224,7 +224,12 @@ réel (pas de liste figée à l'avance) :
 **Comptes utilisateurs** (auth + synchronisation complète, Supabase) — gros
 chantier, découpé en 4 phases indépendamment testables (plan détaillé dans
 l'historique de conversation) :
-1. Auth (email + Google + Apple, flux web) + sync profil/réglages ✅
+1. Auth (email + Google + Apple, flux web) + sync profil/réglages ✅ —
+   confirmation par email active côté projet (compte créé mais pas de
+   session tant que le lien reçu par email n'est pas cliqué — `src/app/auth.tsx`
+   affiche un message explicite plutôt que de rester silencieux) ; mot de
+   passe oublié via `src/app/reset-password.tsx` (lien email → nouvelle
+   session de récupération → `supabase.auth.updateUser`)
 2. Journal, poids, séances — à venir
 3. Photos + Supabase Storage — à venir
 4. Connexion Apple — bloquée sur une action manuelle : inscription au
