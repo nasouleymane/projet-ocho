@@ -74,7 +74,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUpWithEmail = async (email: string, password: string): Promise<SignUpResult> => {
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      // Sans emailRedirectTo explicite, Supabase retombe sur le « Site URL »
+      // par défaut du projet (localhost:3000, jamais configuré pour cette
+      // app mobile) — le lien de confirmation atterrissait sur une page
+      // cassée. Ça ne bloque pas la confirmation elle-même (faite côté
+      // serveur avant la redirection), mais autant rediriger correctement.
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: Linking.createURL('/auth-callback') },
+      });
       // Ce projet Supabase exige la confirmation par email (vérifié via
       // l'API Auth) : signUp() réussit sans erreur mais ne renvoie aucune
       // session tant que le lien reçu par email n'a pas été cliqué. Sans ce
