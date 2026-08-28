@@ -22,12 +22,15 @@ const CACHE_KEYS_TO_CLEAR_ON_SIGN_OUT = ['ocho.profile.v1', 'ocho.settings.v1'];
 
 type OAuthProvider = 'google' | 'apple';
 type AuthResult = { error: string | null };
+/** `needsEmailConfirmation: true` = inscription réussie mais aucune session ouverte —
+ *  ce projet Supabase exige la confirmation par email avant de se connecter. */
+type SignUpResult = AuthResult & { needsEmailConfirmation: boolean };
 
 type AuthContextValue = {
   isLoading: boolean;
   session: Session | null;
   user: User | null;
-  signUpWithEmail: (email: string, password: string) => Promise<AuthResult>;
+  signUpWithEmail: (email: string, password: string) => Promise<SignUpResult>;
   signInWithEmail: (email: string, password: string) => Promise<AuthResult>;
   signInWithOAuth: (provider: OAuthProvider) => Promise<AuthResult>;
   signOut: () => Promise<void>;
@@ -65,15 +68,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const signUpWithEmail = async (email: string, password: string): Promise<AuthResult> => {
+  const signUpWithEmail = async (email: string, password: string): Promise<SignUpResult> => {
     try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      return { error: error?.message ?? null };
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      // Ce projet Supabase exige la confirmation par email (vérifié via
+      // l'API Auth) : signUp() réussit sans erreur mais ne renvoie aucune
+      // session tant que le lien reçu par email n'a pas été cliqué. Sans ce
+      // signal, l'écran ne montrait ni erreur ni navigation — un compte se
+      // créait bel et bien, mais rien ne le disait, ce qui ressemblait à un
+      // blocage complet.
+      const needsEmailConfirmation = !error && !data.session;
+      return { error: error?.message ?? null, needsEmailConfirmation };
     } catch (err) {
       // Ne jamais laisser une exception non rattrapée ici (ex. coupure
       // réseau) : sinon l'écran reste bloqué en chargement indéfiniment,
       // le bouton restant désactivé pour toute tentative suivante.
-      return { error: err instanceof Error ? err.message : 'Connexion impossible.' };
+      return { error: err instanceof Error ? err.message : 'Connexion impossible.', needsEmailConfirmation: false };
     }
   };
 

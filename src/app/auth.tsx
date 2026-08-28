@@ -25,6 +25,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState<string | null>(null);
 
   // Pas de contrainte de longueur côté client : le placeholder qui l'indique
   // disparaît dès la saisie, un bouton désactivé sans explication visible
@@ -36,13 +37,28 @@ export default function AuthScreen() {
     if (!canSubmit) return;
     setError(null);
     setIsSubmitting(true);
-    const { error: authError } =
-      mode === 'signin'
-        ? await signInWithEmail(email.trim(), password)
-        : await signUpWithEmail(email.trim(), password);
+    if (mode === 'signin') {
+      const { error: authError } = await signInWithEmail(email.trim(), password);
+      setIsSubmitting(false);
+      if (authError) setError(authError);
+      // Pas de navigation manuelle : onAuthStateChange fait réagir la gate.
+      return;
+    }
+    const { error: authError, needsEmailConfirmation } = await signUpWithEmail(email.trim(), password);
     setIsSubmitting(false);
-    if (authError) setError(authError);
-    // Pas de navigation manuelle : onAuthStateChange fait réagir la gate.
+    if (authError) {
+      setError(authError);
+    } else if (needsEmailConfirmation) {
+      setPendingConfirmationEmail(email.trim());
+    }
+    // Sinon (confirmation désactivée côté projet) : session ouverte directement,
+    // onAuthStateChange fait réagir la gate, rien à faire ici.
+  };
+
+  const backToSignIn = () => {
+    setPendingConfirmationEmail(null);
+    setMode('signin');
+    setPassword('');
   };
 
   const submitOAuth = async (provider: 'google' | 'apple') => {
@@ -63,60 +79,75 @@ export default function AuthScreen() {
         >
           <View style={styles.head}>
             <Text style={styles.title}>Ocho</Text>
-            <Text style={styles.subtitle}>
-              {mode === 'signin' ? 'Connecte-toi pour retrouver tes données.' : 'Crée un compte pour commencer.'}
-            </Text>
+            {!pendingConfirmationEmail && (
+              <Text style={styles.subtitle}>
+                {mode === 'signin' ? 'Connecte-toi pour retrouver tes données.' : 'Crée un compte pour commencer.'}
+              </Text>
+            )}
           </View>
 
-          <View style={styles.textFields}>
-            <TextField
-              placeholder="Adresse email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
-            <TextField
-              placeholder="Mot de passe (6 caractères min.)"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password"
-            />
-          </View>
+          {pendingConfirmationEmail ? (
+            <>
+              <Text style={styles.confirmText}>
+                Compte créé. Va vérifier ta boîte mail (et les spams) à{' '}
+                <Text style={styles.confirmEmail}>{pendingConfirmationEmail}</Text> pour confirmer ton adresse, puis
+                reviens te connecter ici.
+              </Text>
+              <CtaButton label="Retour à la connexion" onPress={backToSignIn} />
+            </>
+          ) : (
+            <>
+              <View style={styles.textFields}>
+                <TextField
+                  placeholder="Adresse email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                />
+                <TextField
+                  placeholder="Mot de passe (6 caractères min.)"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="password"
+                />
+              </View>
 
-          {error && <Text style={styles.error}>{error}</Text>}
+              {error && <Text style={styles.error}>{error}</Text>}
 
-          <CtaButton
-            label={mode === 'signin' ? 'Se connecter' : 'Créer un compte'}
-            onPress={submitEmail}
-            disabled={!canSubmit}
-          />
+              <CtaButton
+                label={mode === 'signin' ? 'Se connecter' : 'Créer un compte'}
+                onPress={submitEmail}
+                disabled={!canSubmit}
+              />
 
-          <Pressable
-            onPress={() => {
-              setError(null);
-              setMode((m) => (m === 'signin' ? 'signup' : 'signin'));
-            }}
-            accessibilityRole="button"
-          >
-            <Text style={styles.switchLabel}>
-              {mode === 'signin' ? "Pas de compte ? Créer un compte" : 'Déjà un compte ? Se connecter'}
-            </Text>
-          </Pressable>
+              <Pressable
+                onPress={() => {
+                  setError(null);
+                  setMode((m) => (m === 'signin' ? 'signup' : 'signin'));
+                }}
+                accessibilityRole="button"
+              >
+                <Text style={styles.switchLabel}>
+                  {mode === 'signin' ? "Pas de compte ? Créer un compte" : 'Déjà un compte ? Se connecter'}
+                </Text>
+              </Pressable>
 
-          <View style={styles.dividerRow}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerLabel}>ou</Text>
-            <View style={styles.divider} />
-          </View>
+              <View style={styles.dividerRow}>
+                <View style={styles.divider} />
+                <Text style={styles.dividerLabel}>ou</Text>
+                <View style={styles.divider} />
+              </View>
 
-          <View style={styles.oauthGroup}>
-            <CtaButton label="Continuer avec Google" variant="surface" onPress={() => submitOAuth('google')} disabled={isSubmitting} />
-            <CtaButton label="Continuer avec Apple" variant="surface" onPress={() => submitOAuth('apple')} disabled={isSubmitting} />
-          </View>
+              <View style={styles.oauthGroup}>
+                <CtaButton label="Continuer avec Google" variant="surface" onPress={() => submitOAuth('google')} disabled={isSubmitting} />
+                <CtaButton label="Continuer avec Apple" variant="surface" onPress={() => submitOAuth('apple')} disabled={isSubmitting} />
+              </View>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -154,6 +185,13 @@ const getStyles = (colors: ColorPalette) =>
     error: {
       ...typography.body,
       color: colors.textSecondary,
+    },
+    confirmText: {
+      ...typography.body,
+      color: colors.primary,
+    },
+    confirmEmail: {
+      fontFamily: fontFamily.semibold,
     },
     switchLabel: {
       ...typography.body,
