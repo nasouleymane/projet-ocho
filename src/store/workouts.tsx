@@ -1,10 +1,18 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { generateId } from '@/lib/id';
+import * as Crypto from 'expo-crypto';
 import { isWithinLastDays, todayISO } from '@/lib/date';
 import { WorkoutType } from '@/lib/workout';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/store/auth';
 
-/** Ocho — store des séances d'entraînement, persisté via AsyncStorage. */
+/**
+ * Ocho — store des séances d'entraînement, synchronisé avec la table
+ * Supabase `workouts` (RLS scopée au propriétaire). AsyncStorage reste un
+ * cache de lecture instantanée. `exercises` voyage en `jsonb` : toujours
+ * écrit/lu comme un bloc avec sa séance parente (`add-workout.tsx`), rien ne
+ * filtre un exercice indépendamment de sa séance aujourd'hui.
+ */
 
 const WORKOUTS_KEY = 'ocho.workouts.v1';
 
@@ -41,11 +49,46 @@ type WorkoutsContextValue = {
 
 const WorkoutsContext = createContext<WorkoutsContextValue | undefined>(undefined);
 
+type WorkoutRow = {
+  id: string;
+  date: string;
+  type: WorkoutType;
+  duration_min: number;
+  kcal_burned: number;
+  exercises: Exercise[];
+};
+
+const fromRow = (row: WorkoutRow): Workout => ({
+  id: row.id,
+  date: row.date,
+  type: row.type,
+  durationMin: row.duration_min,
+  kcalBurned: row.kcal_burned,
+  exercises: row.exercises,
+});
+
+const toRow = (userId: string, w: Workout) => ({
+  id: w.id,
+  user_id: userId,
+  date: w.date,
+  type: w.type,
+  duration_min: w.durationMin,
+  kcal_burned: w.kcalBurned,
+  exercises: w.exercises,
+});
+
 export function WorkoutsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) {
+      setWorkouts([]);
+      setIsLoading(false);
+      return;
+    }
+
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(WORKOUTS_KEY);
@@ -56,7 +99,19 @@ export function WorkoutsProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     })();
-  }, []);
+
+    supabase
+      .from('workouts')
+      .select('id, date, type, duration_min, kcal_burned, exercises')
+      .eq('user_id', user.id)
+      .order('date', { ascending: true })
+      .then(({ data }) => {
+        if (!data) return;
+        const fresh = (data as WorkoutRow[]).map(fromRow);
+        setWorkouts(fresh);
+        AsyncStorage.setItem(WORKOUTS_KEY, JSON.stringify(fresh)).catch(() => {});
+      });
+  }, [user]);
 
   const persist = (next: Workout[]) => {
     setWorkouts(next);
@@ -66,11 +121,30 @@ export function WorkoutsProvider({ children }: { children: ReactNode }) {
   };
 
   const addWorkout = (input: WorkoutInput, date: string = todayISO()) => {
-    persist([...workouts, { ...input, id: generateId('workout'), date }]);
+    const workout: Workout = { ...input, id: Crypto.randomUUID(), date };
+    persist([...workouts, workout]);
+    if (user) {
+      supabase
+        .from('workouts')
+        .insert(toRow(user.id, workout))
+        .then(({ error }) => {
+          if (error) console.warn('Échec de synchronisation de la séance :', error.message);
+        });
+    }
   };
 
   const removeWorkout = (id: string) => {
     persist(workouts.filter((w) => w.id !== id));
+    if (user) {
+      supabase
+        .from('workouts')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .then(({ error }) => {
+          if (error) console.warn('Échec de suppression (séance) :', error.message);
+        });
+    }
   };
 
   const entriesForDate = (date: string) => workouts.filter((w) => w.date === date);
@@ -82,7 +156,7 @@ export function WorkoutsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<WorkoutsContextValue>(
     () => ({ isLoading, workouts, entriesForDate, dayKcal, countLastDays, addWorkout, removeWorkout }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [workouts, isLoading],
+    [workouts, isLoading, user],
   );
 
   return <WorkoutsContext.Provider value={value}>{children}</WorkoutsContext.Provider>;
