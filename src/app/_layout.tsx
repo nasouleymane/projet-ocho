@@ -95,6 +95,7 @@ function RootNavigation() {
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="auth" />
+        <Stack.Screen name="reset-password" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="workouts" />
         <Stack.Screen name="photos" />

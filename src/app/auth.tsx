@@ -16,26 +16,36 @@ type Mode = 'signin' | 'signup';
  */
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
-  const { signInWithEmail, signUpWithEmail, signInWithOAuth } = useAuth();
+  const { signInWithEmail, signUpWithEmail, signInWithOAuth, sendPasswordReset } = useAuth();
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState<string | null>(null);
+  const [resetSentEmail, setResetSentEmail] = useState<string | null>(null);
 
   // Pas de contrainte de longueur côté client : le placeholder qui l'indique
   // disparaît dès la saisie, un bouton désactivé sans explication visible
   // serait indiscernable d'un bug. Supabase valide côté serveur et renvoie
   // un message clair (affiché ci-dessous) si le mot de passe est trop court.
+  // La correspondance des mots de passe, elle, est vérifiée à la soumission
+  // (message explicite) plutôt que de désactiver silencieusement le bouton.
   const canSubmit = email.trim().length > 0 && password.length > 0 && !isSubmitting;
 
   const submitEmail = async () => {
     if (!canSubmit) return;
     setError(null);
+
+    if (mode === 'signup' && password !== confirmPassword) {
+      setError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+
     setIsSubmitting(true);
     if (mode === 'signin') {
       const { error: authError } = await signInWithEmail(email.trim(), password);
@@ -55,10 +65,26 @@ export default function AuthScreen() {
     // onAuthStateChange fait réagir la gate, rien à faire ici.
   };
 
+  const submitForgotPassword = async () => {
+    if (isSubmitting) return;
+    setError(null);
+    if (email.trim().length === 0) {
+      setError("Entre d'abord ton adresse email ci-dessus.");
+      return;
+    }
+    setIsSubmitting(true);
+    const { error: authError } = await sendPasswordReset(email.trim());
+    setIsSubmitting(false);
+    if (authError) setError(authError);
+    else setResetSentEmail(email.trim());
+  };
+
   const backToSignIn = () => {
     setPendingConfirmationEmail(null);
+    setResetSentEmail(null);
     setMode('signin');
     setPassword('');
+    setConfirmPassword('');
   };
 
   const submitOAuth = async (provider: 'google' | 'apple') => {
@@ -79,7 +105,7 @@ export default function AuthScreen() {
         >
           <View style={styles.head}>
             <Text style={styles.title}>Ocho</Text>
-            {!pendingConfirmationEmail && (
+            {!pendingConfirmationEmail && !resetSentEmail && (
               <Text style={styles.subtitle}>
                 {mode === 'signin' ? 'Connecte-toi pour retrouver tes données.' : 'Crée un compte pour commencer.'}
               </Text>
@@ -92,6 +118,14 @@ export default function AuthScreen() {
                 Compte créé. Va vérifier ta boîte mail (et les spams) à{' '}
                 <Text style={styles.confirmEmail}>{pendingConfirmationEmail}</Text> pour confirmer ton adresse, puis
                 reviens te connecter ici.
+              </Text>
+              <CtaButton label="Retour à la connexion" onPress={backToSignIn} />
+            </>
+          ) : resetSentEmail ? (
+            <>
+              <Text style={styles.confirmText}>
+                Email envoyé à <Text style={styles.confirmEmail}>{resetSentEmail}</Text>. Va vérifier ta boîte (et les
+                spams) et suis le lien pour choisir un nouveau mot de passe.
               </Text>
               <CtaButton label="Retour à la connexion" onPress={backToSignIn} />
             </>
@@ -114,7 +148,23 @@ export default function AuthScreen() {
                   autoCapitalize="none"
                   autoComplete="password"
                 />
+                {mode === 'signup' && (
+                  <TextField
+                    placeholder="Confirmer le mot de passe"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoComplete="password"
+                  />
+                )}
               </View>
+
+              {mode === 'signin' && (
+                <Pressable onPress={submitForgotPassword} accessibilityRole="button">
+                  <Text style={styles.forgotLabel}>Mot de passe oublié ?</Text>
+                </Pressable>
+              )}
 
               {error && <Text style={styles.error}>{error}</Text>}
 
@@ -127,6 +177,7 @@ export default function AuthScreen() {
               <Pressable
                 onPress={() => {
                   setError(null);
+                  setConfirmPassword('');
                   setMode((m) => (m === 'signin' ? 'signup' : 'signin'));
                 }}
                 accessibilityRole="button"
@@ -185,6 +236,12 @@ const getStyles = (colors: ColorPalette) =>
     error: {
       ...typography.body,
       color: colors.textSecondary,
+    },
+    forgotLabel: {
+      ...typography.label,
+      fontFamily: fontFamily.medium,
+      color: colors.accent,
+      textAlign: 'right',
     },
     confirmText: {
       ...typography.body,

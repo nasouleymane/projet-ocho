@@ -33,6 +33,10 @@ type AuthContextValue = {
   signUpWithEmail: (email: string, password: string) => Promise<SignUpResult>;
   signInWithEmail: (email: string, password: string) => Promise<AuthResult>;
   signInWithOAuth: (provider: OAuthProvider) => Promise<AuthResult>;
+  /** Envoie l'email « mot de passe oublié » (lien de récupération vers `/reset-password`). */
+  sendPasswordReset: (email: string) => Promise<AuthResult>;
+  /** Définit un nouveau mot de passe — appelé depuis `/reset-password` une fois la session de récupération établie. */
+  updatePassword: (password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 };
 
@@ -126,6 +130,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const sendPasswordReset = async (email: string): Promise<AuthResult> => {
+    try {
+      // Même piège que pour l'OAuth : ne jamais coder le schéma en dur, pour
+      // rester compatible Expo Go (exp://<host>/--/reset-password) comme un
+      // futur dev client/build autonome (ocho://reset-password).
+      const redirectTo = Linking.createURL('/reset-password');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      return { error: error?.message ?? null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : 'Envoi impossible.' };
+    }
+  };
+
+  const updatePassword = async (password: string): Promise<AuthResult> => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      return { error: error?.message ?? null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : 'Mise à jour impossible.' };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -138,6 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithEmail,
       signInWithEmail,
       signInWithOAuth,
+      sendPasswordReset,
+      updatePassword,
       signOut,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
